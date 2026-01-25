@@ -58,7 +58,7 @@ backend/
 
 ```bash
 # リポジトリをクローン
-git clone https://github.com/your-org/fish-tech.git
+git clone https://github.com/rikut0904/fish-tech.git
 cd fish-tech
 
 # Docker Composeで起動
