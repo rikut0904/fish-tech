@@ -100,7 +100,7 @@ docker compose up --build
 | git log                         | コミット履歴を表示                     |
 | git diff                        | 変更点を表示                           |
 | git rm [ファイル名]             | ファイルを削除し、ステージングに追加   |
-| git reset [ファイル名]          | ステージングエリアからファイルを外す   |
+| git reset HEAD [ファイル名]      | ステージングエリアからファイルを外す   |
 | git stash                       | 作業中の変更を一時退避                 |
 | git stash pop                   | 一時退避した変更を戻す                 |
 
