@@ -1,5 +1,5 @@
 // 魚カードリスト
-import FishCard from "./fish_card";
+import FishCard from "@/app/components/fish_card";
 
 const fishList = [
     { name: "カマス", desc: "淡白で上品な味わい。塩焼きや干物が人気。", image: "/fish-kamasu.png" },

@@ -1,9 +1,9 @@
 import Image from "next/image";
-import Header from "./components/header";
-import HeroSection from "./components/hero_section";
-import FeatureSection from "./components/feature_section";
-import FishCardList from "./components/fish_card_list";
-import Footer from "./components/footer";
+import Header from "@/app/components/header";
+import HeroSection from "@/app/components/hero_section";
+import FeatureSection from "@/app/components/feature_section";
+import FishCardList from "@/app/components/fish_card_list";
+import Footer from "@/app/components/footer";
 
 export default function Home() {
   return (
