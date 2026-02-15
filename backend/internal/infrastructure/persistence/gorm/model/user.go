@@ -1,0 +1,16 @@
+package model
+
+import "time"
+
+// User は user テーブルのGORMモデルです。
+type User struct {
+	UserID      string     `gorm:"column:user_id;primaryKey"`
+	FirebaseUID string     `gorm:"column:firebase_uid;uniqueIndex;not null"`
+	Name        string     `gorm:"column:name;not null"`
+	Mail        string     `gorm:"column:mail;not null"`
+	CreatedAt   time.Time  `gorm:"column:created_at;not null"`
+	UpdatedAt   *time.Time `gorm:"column:updated_at"`
+}
+
+// TableName はテーブル名を返します。
+func (User) TableName() string { return "user" }
