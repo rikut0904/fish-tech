@@ -4,8 +4,8 @@ import "time"
 
 // FishPlaceLinks は fish_place_links テーブルのGORMモデルです。
 type FishPlaceLinks struct {
-	FishID    string     `gorm:"column:fish_id;primaryKey"`
-	PlaceID   string     `gorm:"column:place_id;primaryKey"`
+FishID    string     "gorm:\"column:fish_id;type:uuid;primaryKey\""
+	PlaceID   string     "gorm:\"column:place_id;type:uuid;primaryKey\""
 	Score     *int       `gorm:"column:score"`
 	Explain   string     `gorm:"column:explain"`
 	CreatedAt time.Time  `gorm:"column:created_at;not null"`
