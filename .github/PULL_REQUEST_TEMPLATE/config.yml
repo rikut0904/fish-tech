@@ -1,0 +1,13 @@
+# PRテンプレートの選択肢を定義
+
+# このファイルにより、PR作成時にテンプレートを選択できるようになります。
+
+# PRテンプレートのリスト
+# name: 表示名
+# path: テンプレートファイルへの相対パス
+
+pull_request_templates:
+  - name: フロントエンド用
+    path: PULL_REQUEST_TEMPLATE/frontend_pr_template.md
+  - name: バックエンド用
+    path: PULL_REQUEST_TEMPLATE/backend_pr_template.md
