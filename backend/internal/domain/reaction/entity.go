@@ -11,7 +11,7 @@ type FishReaction struct {
 	UpdatedAt *time.Time
 }
 
-// RecipeReaction は user_recipe_links の情報です。
+// RecipeReaction はレシピに対するユーザーのリアクションを表します。
 type RecipeReaction struct {
 	UserID    string
 	RecipeID  string
