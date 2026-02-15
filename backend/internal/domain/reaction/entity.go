@@ -2,7 +2,7 @@ package reaction
 
 import "time"
 
-// FishReaction は user_fish_links の情報です。
+// FishReaction は魚に対するユーザーのリアクションを表します。
 type FishReaction struct {
 	UserID    string
 	FishID    string
