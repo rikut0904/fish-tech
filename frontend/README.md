@@ -1,36 +1,151 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# fish-tech
 
-## Getting Started
+## 概要
 
-First, run the development server:
+このアプリケーションは石川県と金沢市が主催で行われた漁業ハッカソンで作成したアプリケーションです。
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+有名な魚種（かに・のどぐろ・エビなど）以外の魚の消費者認知度向上を目的としており、魚の図鑑機能やレシピ提案、旅行情報、ゲームなど、様々な機能を通じて多様な魚種の魅力を発信します。
+
+## 技術スタック等
+
+### 環境
+
+| 項目 | バージョン |
+|------|-----------|
+| OS | WSL2 (Ubuntu 24.04.3) |
+| Docker | 29.1.2 |
+
+### フロントエンド
+
+| 項目 | バージョン |
+|------|-----------|
+| Node.js | 24.9.0 |
+| npm | 11.7.0 |
+| npx | 11.7.0 |
+| Next.js | 16.x |
+| TypeScript | 5.x |
+| TailwindCSS | 4.x |
+
+### バックエンド
+
+| 項目 | バージョン |
+|------|-----------|
+| Go | 1.25.6 |
+| Echo | 4.x |
+
+## アーキテクチャ
+
+バックエンドはクリーンアーキテクチャを採用しています。
+
+```
+backend/
+├── cmd/
+│   └── api/             # エントリーポイント
+└── internal/
+    ├── domain/          # ドメイン層（エンティティ）
+    ├── usecase/         # ユースケース層（ビジネスロジック）
+    ├── interface/       # インターフェース層（ハンドラー）
+    └── infrastructure/  # インフラストラクチャ層（ルーター等）
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## セットアップ
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 必要条件
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- Docker および Docker Compose がインストールされていること
 
-## Learn More
+### 起動方法
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+# リポジトリをクローン
+git clone https://github.com/rikut0904/fish-tech.git
+cd fish-tech
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# Docker Composeで起動
+docker compose up --build
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### アクセス先
 
-## Deploy on Vercel
+| サービス    | URL |
+|-------------|-----|
+| フロントエンド    | [http://localhost:3000](http://localhost:3000)  |
+| バックエンド API  | [http://localhost:8080](http://localhost:8080)  |
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 主要なgitコマンドと説明
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### gitコマンド実行時の注意事項
+
+- 重要な作業前には必ず `git status` で現在の状態を確認すること
+- コミット前に `git diff` で変更内容を確認すること
+- `main` や `develop` などの主要ブランチへ直接pushしない（必ずプルリクエストを経由）
+- コンフリクトが発生した場合は、内容をよく確認し、必要に応じてチームメンバーと相談する
+- `git pull` 前にローカルの変更をコミットまたはstashしておくこと
+- 不要なファイルや機密情報（.env等）は `.gitignore` に追加し、コミットしない
+- コミットメッセージは内容が分かるように具体的に記載する
+- ブランチ作成時は命名規則に従うこと
+
+| コマンド                        | 説明                                   |
+| ------------------------------- |----------------------------------------|
+| git clone [URL]                 | リポジトリを複製する                   |
+| git status                      | 作業ディレクトリの状態を表示           |
+| git add [ファイル名]            | ファイルをステージングエリアに追加     |
+| git commit -m "メッセージ"      | 変更をコミットする                     |
+| git push                        | リモートリポジトリに変更を送信         |
+| git pull                        | リモートリポジトリの変更を取得・反映   |
+| git checkout [ブランチ名]       | 指定したブランチに切り替える           |
+| git branch                      | ブランチ一覧を表示                     |
+| git branch [ブランチ名]         | 新しいブランチを作成                   |
+| git merge [ブランチ名]          | 指定したブランチを現在のブランチに統合 |
+| git log                         | コミット履歴を表示                     |
+| git diff                        | 変更点を表示                           |
+| git rm [ファイル名]             | ファイルを削除し、ステージングに追加   |
+| git reset HEAD [ファイル名]      | ステージングエリアからファイルを外す   |
+| git stash                       | 作業中の変更を一時退避                 |
+| git stash pop                   | 一時退避した変更を戻す                 |
+
+## ブランチ命名規則
+
+### フロントエンド
+
+- `feature/[機能名]` : 新機能追加
+- `bug/[内容]`      : バグ修正
+- `repair/[内容]`   : 軽微な修正やリファクタ
+- `hotfix/[内容]`   : 緊急修正
+- `chore/[内容]`    : 雑務・依存更新など
+
+#### 命名例（フロントエンド）
+
+| 用途         | ブランチ名例                       |
+|--------------|------------------------------------|
+| 新機能       | feature/login-form                 |
+| バグ修正     | bug/fix-header-logo                |
+| 軽微修正     | repair/typo-footer                 |
+| 緊急修正     | hotfix/build-error                 |
+| 依存更新     | chore/update-deps                  |
+
+### バックエンド
+
+- `feature/[機能名]`  : 新機能追加
+- `fix/[内容]`       : バグ修正
+- `refactor/[内容]`  : リファクタリング
+- `hotfix/[内容]`    : 緊急修正
+- `chore/[内容]`     : 雑務・依存更新など
+
+#### 命名例（バックエンド）
+
+| 用途         | ブランチ名例                       |
+|--------------|------------------------------------|
+| 新機能       | feature/add-fish-api               |
+| バグ修正     | fix/invalid-response               |
+| リファクタ   | refactor/domain-entity             |
+| 緊急修正     | hotfix/server-crash                |
+| 依存更新     | chore/update-go-mod                |
+
+## ドキュメント
+
+詳細なドキュメントは [`docs/`](./docs/) ディレクトリを参照してください。
+
+## ライセンス
+
+このプロジェクトはMITライセンスの下で公開されています。詳細は [LICENSE](./LICENSE) を参照してください。
