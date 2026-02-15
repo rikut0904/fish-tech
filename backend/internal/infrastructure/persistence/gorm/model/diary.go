@@ -5,10 +5,10 @@ import "time"
 // Diary は diary テーブルのGORMモデルです。
 type Diary struct {
 	ID        string     `gorm:"column:id;type:uuid;primaryKey"`
-	UserID    string     `gorm:"column:user_id;not null;index"`
-	FishID    string     `gorm:"column:fish_id;not null;index"`
-	RecipeID  *string    `gorm:"column:recipe_id"`
-	PlaceID   *string    `gorm:"column:place_id"`
+UserID    string     "gorm:\"column:user_id;type:uuid;not null;index\""
+	FishID    string     "gorm:\"column:fish_id;type:uuid;not null;index\""
+	RecipeID  *string    "gorm:\"column:recipe_id;type:uuid\""
+	PlaceID   *string    "gorm:\"column:place_id;type:uuid\""
 	Date      time.Time  `gorm:"column:date;not null"`
 	Explain   *string    `gorm:"column:explain"`
 	Score     *int       `gorm:"column:score"`
