@@ -4,8 +4,8 @@ import "time"
 
 // FishPair は fish_pair テーブルのGORMモデルです。
 type FishPair struct {
-	FishAID   string     `gorm:"column:fish_a_id;primaryKey"`
-	FishBID   string     `gorm:"column:fish_b_id;primaryKey"`
+FishAID   string     "gorm:\"column:fish_a_id;type:uuid;primaryKey\""
+	FishBID   string     "gorm:\"column:fish_b_id;type:uuid;primaryKey\""
 	Result    string     `gorm:"column:result;not null"`
 	Explain   string     `gorm:"column:explain"`
 	Score     int        `gorm:"column:score;not null"`
