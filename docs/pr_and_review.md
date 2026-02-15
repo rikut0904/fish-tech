@@ -27,5 +27,3 @@
 5.Assigneesを押して自分を指定
 
 ![Assigneesの指定](image-6.png)
-
-## ブランチの作成
