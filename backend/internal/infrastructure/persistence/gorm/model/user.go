@@ -4,7 +4,7 @@ import "time"
 
 // User は user テーブルのGORMモデルです。
 type User struct {
-	UserID      string     `gorm:"column:user_id;primaryKey"`
+UserID      string     "gorm:\"column:user_id;type:uuid;primaryKey\""
 	FirebaseUID string     `gorm:"column:firebase_uid;uniqueIndex;not null"`
 	Name        string     `gorm:"column:name;not null"`
 	Mail        string     `gorm:"column:mail;not null"`
