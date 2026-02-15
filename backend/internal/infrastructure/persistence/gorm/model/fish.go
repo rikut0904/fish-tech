@@ -4,7 +4,7 @@ import "time"
 
 // Fish は fish テーブルのGORMモデルです。
 type Fish struct {
-	ID        string     `gorm:"column:id;primaryKey"`
+ID        string     "gorm:\"column:id;type:uuid;primaryKey\""
 	NameJa    string     `gorm:"column:name_ja;not null"`
 	Name      string     `gorm:"column:name;not null"`
 	Explain   string     `gorm:"column:explain"`
