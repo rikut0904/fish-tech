@@ -4,8 +4,8 @@ import "time"
 
 // FishingMethodsLinks は fishing_methods_links テーブルのGORMモデルです。
 type FishingMethodsLinks struct {
-	FishID    string     `gorm:"column:fish_id;primaryKey"`
-	MethodID  string     `gorm:"column:method_id;primaryKey"`
+FishID    string     "gorm:\"column:fish_id;type:uuid;primaryKey\""
+	MethodID  string     "gorm:\"column:method_id;type:uuid;primaryKey\""
 	IsPrimary bool       `gorm:"column:is_primary;not null;default:false"`
 	Explain   string     `gorm:"column:explain"`
 	CreatedAt time.Time  `gorm:"column:created_at;not null"`
