@@ -4,7 +4,7 @@ import "time"
 
 // PlaceCache は place_cache テーブルのGORMモデルです。
 type PlaceCache struct {
-	ID        string    `gorm:"column:id;primaryKey"`
+ID        string    "gorm:\"column:id;type:uuid;primaryKey\""
 	Name      string    `gorm:"column:name;not null"`
 	Address   *string   `gorm:"column:address"`
 	Genre     *string   `gorm:"column:genre"`
