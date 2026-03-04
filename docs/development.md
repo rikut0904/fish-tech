@@ -41,6 +41,8 @@ fish-tech/
 docker compose up --build
 ```
 
+このコマンドで `frontend`（3000）/ `admin`（3001）/ `backend`（8080）を同時起動できます。
+
 ### 個別起動
 
 #### フロントエンド
@@ -64,6 +66,7 @@ go run ./cmd/api/main.go
 | サービス | URL |
 |----------|-----|
 | フロントエンド | http://localhost:3000 |
+| 管理画面（admin） | http://localhost:3001 |
 | バックエンド API | http://localhost:8080 |
 | Hello API | http://localhost:8080/api/hello |
 

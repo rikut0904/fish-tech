@@ -1,0 +1,133 @@
+package handler
+
+import (
+	"errors"
+	"net/http"
+
+	"github.com/labstack/echo/v4"
+
+	adminUseCase "fish-tech/internal/usecase/admin"
+)
+
+// AdminHandler は管理画面向けHTTPハンドラーです。
+type AdminHandler struct {
+	useCase adminUseCase.UseCase
+}
+
+// NewAdminHandler は新しい管理画面ハンドラーを作成します。
+func NewAdminHandler(useCase adminUseCase.UseCase) *AdminHandler {
+	return &AdminHandler{useCase: useCase}
+}
+
+type createFishRequest struct {
+	Name        string `json:"name"`
+	Category    string `json:"category"`
+	Description string `json:"description"`
+}
+
+type fishResponse struct {
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	Category    string `json:"category"`
+	Description string `json:"description"`
+}
+
+type createPairRequest struct {
+	FishIDa string `json:"fishIdA"`
+	FishIDb string `json:"fishIdB"`
+	Score   int    `json:"score"`
+	Memo    string `json:"memo"`
+}
+
+type pairResponse struct {
+	ID      string `json:"id"`
+	FishIDa string `json:"fishIdA"`
+	FishIDb string `json:"fishIdB"`
+	Score   int    `json:"score"`
+	Memo    string `json:"memo"`
+}
+
+// CreateFish は魚を登録します。
+func (h *AdminHandler) CreateFish(c echo.Context) error {
+	var req createFishRequest
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "リクエストが不正です"})
+	}
+
+	fish, err := h.useCase.CreateFish(c.Request().Context(), req.Name, req.Category, req.Description)
+	if err != nil {
+		if errors.Is(err, adminUseCase.ErrInvalidFishName) {
+			return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
+		}
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "魚の登録に失敗しました"})
+	}
+
+	return c.JSON(http.StatusCreated, fishResponse{
+		ID:          fish.ID,
+		Name:        fish.Name,
+		Category:    fish.Category,
+		Description: fish.Description,
+	})
+}
+
+// DeleteFish は魚を削除します。
+func (h *AdminHandler) DeleteFish(c echo.Context) error {
+	id := c.Param("id")
+	if id == "" {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "idは必須です"})
+	}
+
+	if err := h.useCase.DeleteFish(c.Request().Context(), id); err != nil {
+		if errors.Is(err, adminUseCase.ErrFishNotFound) {
+			return c.JSON(http.StatusNotFound, map[string]string{"error": err.Error()})
+		}
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "魚の削除に失敗しました"})
+	}
+
+	return c.NoContent(http.StatusNoContent)
+}
+
+// CreatePair は魚相性を登録します。
+func (h *AdminHandler) CreatePair(c echo.Context) error {
+	var req createPairRequest
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "リクエストが不正です"})
+	}
+
+	pair, err := h.useCase.CreatePair(c.Request().Context(), req.FishIDa, req.FishIDb, req.Score, req.Memo)
+	if err != nil {
+		switch {
+		case errors.Is(err, adminUseCase.ErrInvalidPair),
+			errors.Is(err, adminUseCase.ErrPairAlreadyExists),
+			errors.Is(err, adminUseCase.ErrFishNotFound):
+			return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
+		default:
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "相性の登録に失敗しました"})
+		}
+	}
+
+	return c.JSON(http.StatusCreated, pairResponse{
+		ID:      pair.ID,
+		FishIDa: pair.FishIDa,
+		FishIDb: pair.FishIDb,
+		Score:   pair.Score,
+		Memo:    pair.Memo,
+	})
+}
+
+// DeletePair は魚相性を削除します。
+func (h *AdminHandler) DeletePair(c echo.Context) error {
+	id := c.Param("id")
+	if id == "" {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "idは必須です"})
+	}
+
+	if err := h.useCase.DeletePair(c.Request().Context(), id); err != nil {
+		if errors.Is(err, adminUseCase.ErrPairNotFound) {
+			return c.JSON(http.StatusNotFound, map[string]string{"error": "相性データが見つかりません"})
+		}
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "相性の削除に失敗しました"})
+	}
+
+	return c.NoContent(http.StatusNoContent)
+}
