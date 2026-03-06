@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { Heart, Search, Filter, ChevronLeft } from 'lucide-react';
-// app/fish-book/page.tsx の場合
+// app/visual-dictionary/page.tsx の場合
 import { Fish } from '../types/fish';
 
 const allFishData: Fish[] = Array.from({ length: 120 }, (_, i) => ({
