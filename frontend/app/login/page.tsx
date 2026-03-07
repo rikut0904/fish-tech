@@ -20,6 +20,11 @@ export default function LoginPage() {
         const envPassword = process.env.NEXT_PUBLIC_LOGIN_PASSWORD;
         if (email === envEmail && password === envPassword) {
             setError("");
+            // モック環境なので localStorage にログイン状態を保存する
+            if (typeof window !== "undefined") {
+                localStorage.setItem("isLoggedIn", "true");
+                localStorage.setItem("userEmail", email);
+            }
             router.push("/");
         } else {
             setError("メールアドレスまたはパスワードが正しくありません。");
