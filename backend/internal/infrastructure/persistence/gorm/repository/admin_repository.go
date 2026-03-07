@@ -47,6 +47,8 @@ func (r *AdminRepository) ListFishes(ctx context.Context) ([]adminDomain.Fish, e
 			Name:        name,
 			Category:    row.Category,
 			Description: row.Explain,
+			ImageURL:    row.ImageURL,
+			LinkURL:     row.LinkURL,
 			CreatedAt:   row.CreatedAt,
 		})
 	}
@@ -63,6 +65,8 @@ func (r *AdminRepository) CreateFish(ctx context.Context, fish adminDomain.Fish)
 		Name:      fish.Name,
 		Category:  fish.Category,
 		Explain:   fish.Description,
+		ImageURL:  fish.ImageURL,
+		LinkURL:   fish.LinkURL,
 		CreatedAt: fish.CreatedAt,
 		UpdatedAt: &updatedAt,
 	}

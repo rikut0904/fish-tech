@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"fish-tech/internal/infrastructure/googlephotos"
 	"fish-tech/internal/infrastructure/persistence/gorm"
 	"fish-tech/internal/infrastructure/persistence/gorm/repository"
 	"fish-tech/internal/interface/handler"
@@ -45,7 +46,8 @@ func NewRouter() (*echo.Echo, error) {
 	// ハンドラーの初期化
 	helloHandler := handler.NewHelloHandler(helloUseCase)
 	publicFishHandler := handler.NewPublicFishHandler(adminUseCase)
-	adminHTTPHandler := adminHandler.NewAdminHandler(adminUseCase)
+	photosClient := googlephotos.NewClientFromEnv()
+	adminHTTPHandler := adminHandler.NewAdminHandler(adminUseCase, photosClient)
 	allowedAdminOrigins := parseAllowedOrigins(os.Getenv("ADMIN_ALLOWED_ORIGINS"), defaultAdminOrigin)
 
 	// ルーティング
@@ -58,6 +60,7 @@ func NewRouter() (*echo.Echo, error) {
 		adminGroup := api.Group("/admin")
 		adminGroup.Use(RequireAdminOrigin(allowedAdminOrigins))
 		{
+			adminGroup.POST("/fishes/upload-image", adminHTTPHandler.UploadFishImage)
 			adminGroup.POST("/fishes", adminHTTPHandler.CreateFish)
 			adminGroup.DELETE("/fishes/:id", adminHTTPHandler.DeleteFish)
 			adminGroup.POST("/pairs", adminHTTPHandler.CreatePair)

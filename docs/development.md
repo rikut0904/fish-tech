@@ -61,6 +61,10 @@ go mod download
 go run ./cmd/api/main.go
 ```
 
+Google Photosへの画像アップロード機能を利用する場合は、`backend/.env` に
+`GOOGLE_PHOTOS_CLIENT_ID` / `GOOGLE_PHOTOS_CLIENT_SECRET` /
+`GOOGLE_PHOTOS_REFRESH_TOKEN`（任意で `GOOGLE_PHOTOS_ALBUM_ID`）を設定してください。
+
 ## アクセス先
 
 | サービス | URL |

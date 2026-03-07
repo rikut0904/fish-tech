@@ -13,6 +13,8 @@ type publicFishResponse struct {
 	Name        string `json:"name"`
 	Category    string `json:"category"`
 	Description string `json:"description"`
+	ImageURL    string `json:"imageUrl"`
+	LinkURL     string `json:"linkUrl"`
 }
 
 type publicPairResponse struct {
@@ -47,6 +49,8 @@ func (h *PublicFishHandler) ListFishes(c echo.Context) error {
 			Name:        fish.Name,
 			Category:    fish.Category,
 			Description: fish.Description,
+			ImageURL:    fish.ImageURL,
+			LinkURL:     fish.LinkURL,
 		})
 	}
 

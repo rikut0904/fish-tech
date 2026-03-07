@@ -8,6 +8,8 @@ type Fish struct {
 	Name        string
 	Category    string
 	Description string
+	ImageURL    string
+	LinkURL     string
 	CreatedAt   time.Time
 }
 

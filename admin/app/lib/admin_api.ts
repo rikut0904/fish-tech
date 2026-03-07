@@ -3,6 +3,8 @@ export type Fish = {
   name: string;
   category: string;
   description: string;
+  imageUrl: string;
+  linkUrl: string;
 };
 
 export type FishPair = {
@@ -57,6 +59,8 @@ export async function createFish(input: {
   name: string;
   category: string;
   description: string;
+  imageUrl: string;
+  linkUrl: string;
 }): Promise<Fish> {
   const response = await fetch(`${API_BASE_URL}/admin/fishes`, {
     method: "POST",
@@ -68,6 +72,22 @@ export async function createFish(input: {
   }
 
   return (await response.json()) as Fish;
+}
+
+export async function uploadFishImage(file: File): Promise<string> {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await fetch(`${API_BASE_URL}/admin/fishes/upload-image`, {
+    method: "POST",
+    body: formData,
+  });
+  if (!response.ok) {
+    throw new Error(await parseErrorMessage(response));
+  }
+
+  const data = (await response.json()) as { imageUrl: string };
+  return data.imageUrl;
 }
 
 export async function deleteFish(id: string): Promise<void> {

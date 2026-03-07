@@ -40,7 +40,7 @@ type Repository interface {
 // UseCase は管理画面向けユースケースのインターフェースです。
 type UseCase interface {
 	ListFishes(ctx context.Context) ([]adminDomain.Fish, error)
-	CreateFish(ctx context.Context, name string, category string, description string) (adminDomain.Fish, error)
+	CreateFish(ctx context.Context, name string, category string, description string, imageURL string, linkURL string) (adminDomain.Fish, error)
 	DeleteFish(ctx context.Context, id string) error
 	ListPairs(ctx context.Context) ([]adminDomain.FishPair, error)
 	CreatePair(ctx context.Context, fishIDa string, fishIDb string, score int, memo string) (adminDomain.FishPair, error)
@@ -62,7 +62,7 @@ func (u *adminUseCase) ListFishes(ctx context.Context) ([]adminDomain.Fish, erro
 }
 
 // CreateFish は魚を追加します。
-func (u *adminUseCase) CreateFish(ctx context.Context, name string, category string, description string) (adminDomain.Fish, error) {
+func (u *adminUseCase) CreateFish(ctx context.Context, name string, category string, description string, imageURL string, linkURL string) (adminDomain.Fish, error) {
 	trimmedName := strings.TrimSpace(name)
 	if trimmedName == "" {
 		return adminDomain.Fish{}, ErrInvalidFishName
@@ -73,6 +73,8 @@ func (u *adminUseCase) CreateFish(ctx context.Context, name string, category str
 		Name:        trimmedName,
 		Category:    strings.TrimSpace(category),
 		Description: strings.TrimSpace(description),
+		ImageURL:    strings.TrimSpace(imageURL),
+		LinkURL:     strings.TrimSpace(linkURL),
 		CreatedAt:   time.Now(),
 	}
 

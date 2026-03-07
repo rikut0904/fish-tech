@@ -1,8 +1,11 @@
 package handler
 
 import (
+	"context"
 	"errors"
+	"io"
 	"net/http"
+	"path/filepath"
 
 	"github.com/labstack/echo/v4"
 
@@ -11,18 +14,27 @@ import (
 
 // AdminHandler は管理画面向けHTTPハンドラーです。
 type AdminHandler struct {
-	useCase adminUseCase.UseCase
+	useCase  adminUseCase.UseCase
+	uploader ImageUploader
+}
+
+// ImageUploader は画像アップロード機能を表すインターフェースです。
+type ImageUploader interface {
+	Enabled() bool
+	Upload(ctx context.Context, filename string, data []byte) (string, error)
 }
 
 // NewAdminHandler は新しい管理画面ハンドラーを作成します。
-func NewAdminHandler(useCase adminUseCase.UseCase) *AdminHandler {
-	return &AdminHandler{useCase: useCase}
+func NewAdminHandler(useCase adminUseCase.UseCase, uploader ImageUploader) *AdminHandler {
+	return &AdminHandler{useCase: useCase, uploader: uploader}
 }
 
 type createFishRequest struct {
 	Name        string `json:"name"`
 	Category    string `json:"category"`
 	Description string `json:"description"`
+	ImageURL    string `json:"imageUrl"`
+	LinkURL     string `json:"linkUrl"`
 }
 
 type fishResponse struct {
@@ -30,6 +42,8 @@ type fishResponse struct {
 	Name        string `json:"name"`
 	Category    string `json:"category"`
 	Description string `json:"description"`
+	ImageURL    string `json:"imageUrl"`
+	LinkURL     string `json:"linkUrl"`
 }
 
 type createPairRequest struct {
@@ -47,6 +61,10 @@ type pairResponse struct {
 	Memo    string `json:"memo"`
 }
 
+type uploadImageResponse struct {
+	ImageURL string `json:"imageUrl"`
+}
+
 // CreateFish は魚を登録します。
 func (h *AdminHandler) CreateFish(c echo.Context) error {
 	var req createFishRequest
@@ -54,7 +72,14 @@ func (h *AdminHandler) CreateFish(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "リクエストが不正です"})
 	}
 
-	fish, err := h.useCase.CreateFish(c.Request().Context(), req.Name, req.Category, req.Description)
+	fish, err := h.useCase.CreateFish(
+		c.Request().Context(),
+		req.Name,
+		req.Category,
+		req.Description,
+		req.ImageURL,
+		req.LinkURL,
+	)
 	if err != nil {
 		if errors.Is(err, adminUseCase.ErrInvalidFishName) {
 			return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
@@ -67,7 +92,47 @@ func (h *AdminHandler) CreateFish(c echo.Context) error {
 		Name:        fish.Name,
 		Category:    fish.Category,
 		Description: fish.Description,
+		ImageURL:    fish.ImageURL,
+		LinkURL:     fish.LinkURL,
 	})
+}
+
+// UploadFishImage は魚画像をGoogle Photosへアップロードします。
+func (h *AdminHandler) UploadFishImage(c echo.Context) error {
+	if h.uploader == nil || !h.uploader.Enabled() {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Google Photos設定が不足しています"})
+	}
+
+	fileHeader, err := c.FormFile("file")
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "画像ファイルが指定されていません"})
+	}
+
+	file, err := fileHeader.Open()
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "画像ファイルを開けません"})
+	}
+	defer file.Close()
+
+	data, err := io.ReadAll(file)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "画像ファイルの読み込みに失敗しました"})
+	}
+	if len(data) == 0 {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "空の画像はアップロードできません"})
+	}
+
+	name := filepath.Base(fileHeader.Filename)
+	if name == "." || name == "/" || name == "" {
+		name = "upload.jpg"
+	}
+
+	imageURL, err := h.uploader.Upload(c.Request().Context(), name, data)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Google Photosへのアップロードに失敗しました"})
+	}
+
+	return c.JSON(http.StatusCreated, uploadImageResponse{ImageURL: imageURL})
 }
 
 // DeleteFish は魚を削除します。

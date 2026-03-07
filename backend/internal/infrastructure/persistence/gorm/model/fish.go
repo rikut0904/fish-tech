@@ -9,6 +9,8 @@ type Fish struct {
 	Name      string     `gorm:"column:name;not null"`
 	Category  string     `gorm:"column:category"`
 	Explain   string     `gorm:"column:explain"`
+	ImageURL  string     `gorm:"column:image_url"`
+	LinkURL   string     `gorm:"column:link_url"`
 	CreatedAt time.Time  `gorm:"column:created_at;not null"`
 	UpdatedAt *time.Time `gorm:"column:updated_at"`
 }

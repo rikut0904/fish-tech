@@ -29,6 +29,7 @@ http://localhost:8080/api
 
 | メソッド | パス | 説明 |
 |----------|------|------|
+| POST | `/api/admin/fishes/upload-image` | 画像をGoogle Photosへアップロード |
 | POST | `/api/admin/fishes` | 魚を登録 |
 | DELETE | `/api/admin/fishes/:id` | 魚を削除（関連する相性も削除） |
 | POST | `/api/admin/pairs` | 魚同士の相性を登録 |
@@ -68,9 +69,28 @@ http://localhost:8080/api
       "id": "uuid",
       "name": "ヒラメ",
       "category": "白身魚",
-      "description": "淡白で上品な味わい"
+      "description": "淡白で上品な味わい",
+      "imageUrl": "https://photos.google.com/...",
+      "linkUrl": "https://example.com/fish/hirame"
     }
   ]
+}
+```
+
+#### POST /api/admin/fishes/upload-image
+
+画像ファイルをGoogle Photosへアップロードする
+
+**リクエスト**
+
+- `multipart/form-data`
+- フィールド名: `file`
+
+**レスポンス**
+
+```json
+{
+  "imageUrl": "https://photos.google.com/..."
 }
 ```
 
@@ -84,7 +104,9 @@ http://localhost:8080/api
 {
   "name": "ヒラメ",
   "category": "白身魚",
-  "description": "淡白で上品な味わい"
+  "description": "淡白で上品な味わい",
+  "imageUrl": "https://photos.google.com/...",
+  "linkUrl": "https://example.com/fish/hirame"
 }
 ```
 
@@ -95,7 +117,9 @@ http://localhost:8080/api
   "id": "uuid",
   "name": "ヒラメ",
   "category": "白身魚",
-  "description": "淡白で上品な味わい"
+  "description": "淡白で上品な味わい",
+  "imageUrl": "https://photos.google.com/...",
+  "linkUrl": "https://example.com/fish/hirame"
 }
 ```
 

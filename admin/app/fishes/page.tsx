@@ -1,8 +1,8 @@
 "use client";
 
-import { FormEvent, useEffect } from "react";
+import { ChangeEvent, FormEvent, useEffect } from "react";
 import Link from "next/link";
-import { Fish, createFish, deleteFish, fetchFishes } from "@/app/lib/admin_api";
+import { Fish, createFish, deleteFish, fetchFishes, uploadFishImage } from "@/app/lib/admin_api";
 import { usePatchReducer } from "@/app/hooks/use_patch_reducer";
 
 type FishesPageState = {
@@ -12,6 +12,9 @@ type FishesPageState = {
   fishName: string;
   fishCategory: string;
   fishDescription: string;
+  fishImageUrl: string;
+  fishLinkUrl: string;
+  uploadingImage: boolean;
 };
 
 const initialState: FishesPageState = {
@@ -21,6 +24,9 @@ const initialState: FishesPageState = {
   fishName: "",
   fishCategory: "",
   fishDescription: "",
+  fishImageUrl: "",
+  fishLinkUrl: "",
+  uploadingImage: false,
 };
 
 export default function FishesPage() {
@@ -53,12 +59,16 @@ export default function FishesPage() {
         name: state.fishName,
         category: state.fishCategory,
         description: state.fishDescription,
+        imageUrl: state.fishImageUrl,
+        linkUrl: state.fishLinkUrl,
       });
       patchState((prev) => ({
         fishes: [createdFish, ...prev.fishes],
         fishName: "",
         fishCategory: "",
         fishDescription: "",
+        fishImageUrl: "",
+        fishLinkUrl: "",
       }));
     } catch (error) {
       patchState({
@@ -79,6 +89,26 @@ export default function FishesPage() {
       patchState({
         errorMessage: error instanceof Error ? error.message : "魚の削除に失敗しました",
       });
+    }
+  };
+
+  const handleUploadImage = async (event: ChangeEvent<HTMLInputElement>): Promise<void> => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    patchState({ errorMessage: "", uploadingImage: true });
+    try {
+      const imageUrl = await uploadFishImage(file);
+      patchState({ fishImageUrl: imageUrl });
+    } catch (error) {
+      patchState({
+        errorMessage: error instanceof Error ? error.message : "画像アップロードに失敗しました",
+      });
+    } finally {
+      patchState({ uploadingImage: false });
+      event.target.value = "";
     }
   };
 
@@ -150,6 +180,39 @@ export default function FishesPage() {
                   placeholder="特徴やおすすめの食べ方"
                 />
               </label>
+              <label className="block text-sm font-medium">
+                画像アップロード（Google Photos）
+                <input
+                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
+                  type="file"
+                  accept="image/*"
+                  onChange={(event) => void handleUploadImage(event)}
+                  disabled={state.uploadingImage}
+                />
+              </label>
+              <label className="block text-sm font-medium">
+                画像URL
+                <input
+                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
+                  type="url"
+                  value={state.fishImageUrl}
+                  onChange={(event) => patchState({ fishImageUrl: event.target.value })}
+                  placeholder="Google PhotosのURLまたは画像URL"
+                />
+              </label>
+              <label className="block text-sm font-medium">
+                関連リンクURL
+                <input
+                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
+                  type="url"
+                  value={state.fishLinkUrl}
+                  onChange={(event) => patchState({ fishLinkUrl: event.target.value })}
+                  placeholder="紹介ページなどのURL"
+                />
+              </label>
+              {state.uploadingImage && (
+                <p className="text-sm text-slate-500">画像アップロード中...</p>
+              )}
               <button
                 className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700"
                 type="submit"
@@ -172,8 +235,25 @@ export default function FishesPage() {
                   <div className="flex items-center justify-between gap-3">
                     <div>
                       <p className="font-semibold">{fish.name}</p>
+                      {fish.imageUrl && (
+                        <img
+                          src={fish.imageUrl}
+                          alt={fish.name}
+                          className="mt-2 h-24 w-24 rounded object-cover"
+                        />
+                      )}
                       {fish.category && <p className="text-slate-500">カテゴリ: {fish.category}</p>}
                       {fish.description && <p className="text-slate-600">{fish.description}</p>}
+                      {fish.linkUrl && (
+                        <a
+                          href={fish.linkUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-sky-700 underline"
+                        >
+                          関連リンク
+                        </a>
+                      )}
                     </div>
                     <button
                       className="rounded-md border border-rose-400 px-3 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-50"
