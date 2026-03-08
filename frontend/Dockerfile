@@ -2,6 +2,7 @@
 FROM node:24.9.0-alpine AS builder
 
 WORKDIR /app
+RUN npm install -g npm@latest
 
 # パッケージファイルをコピー
 COPY package*.json ./
@@ -17,6 +18,7 @@ RUN npm run build
 FROM node:24.9.0-alpine AS runner
 
 WORKDIR /app
+RUN npm install -g npm@latest
 
 ENV NODE_ENV=production
 
