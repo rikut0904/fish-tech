@@ -16,6 +16,7 @@ import (
 const (
 	uploadEndpoint      = "https://photoslibrary.googleapis.com/v1/uploads"
 	batchCreateEndpoint = "https://photoslibrary.googleapis.com/v1/mediaItems:batchCreate"
+	mediaItemEndpoint   = "https://photoslibrary.googleapis.com/v1/mediaItems/%s"
 	tokenEndpoint       = "https://oauth2.googleapis.com/token"
 )
 
@@ -65,7 +66,19 @@ func (c *Client) Upload(ctx context.Context, filename string, data []byte) (stri
 		return "", err
 	}
 
-	return c.createMediaItem(ctx, accessToken, uploadToken, filename)
+	imageURL, err := c.createMediaItem(ctx, accessToken, uploadToken, filename, c.targetAlbumID)
+	if err == nil {
+		return imageURL, nil
+	}
+	if c.targetAlbumID != "" && isInvalidAlbumIDError(err) {
+		return c.createMediaItem(ctx, accessToken, uploadToken, filename, "")
+	}
+
+	return "", err
+}
+
+func isInvalidAlbumIDError(err error) bool {
+	return strings.Contains(strings.ToLower(err.Error()), "invalid album id")
 }
 
 func (c *Client) fetchAccessToken(ctx context.Context) (string, error) {
@@ -140,7 +153,7 @@ func (c *Client) uploadRawBytes(ctx context.Context, accessToken string, filenam
 	return uploadToken, nil
 }
 
-func (c *Client) createMediaItem(ctx context.Context, accessToken string, uploadToken string, filename string) (string, error) {
+func (c *Client) createMediaItem(ctx context.Context, accessToken string, uploadToken string, filename string, albumID string) (string, error) {
 	requestBody := map[string]any{
 		"newMediaItems": []map[string]any{
 			{
@@ -152,8 +165,8 @@ func (c *Client) createMediaItem(ctx context.Context, accessToken string, upload
 			},
 		},
 	}
-	if c.targetAlbumID != "" {
-		requestBody["albumId"] = c.targetAlbumID
+	if albumID != "" {
+		requestBody["albumId"] = albumID
 	}
 
 	payload, err := json.Marshal(requestBody)
@@ -189,6 +202,7 @@ func (c *Client) createMediaItem(ctx context.Context, accessToken string, upload
 				Message string `json:"message"`
 			} `json:"status"`
 			MediaItem struct {
+				ID         string `json:"id"`
 				ProductURL string `json:"productUrl"`
 				BaseURL    string `json:"baseUrl"`
 			} `json:"mediaItem"`
@@ -205,12 +219,61 @@ func (c *Client) createMediaItem(ctx context.Context, accessToken string, upload
 	if item.Status.Code != 0 {
 		return "", fmt.Errorf("Google Photos保存エラー: %s", item.Status.Message)
 	}
-	if item.MediaItem.ProductURL != "" {
-		return item.MediaItem.ProductURL, nil
-	}
 	if item.MediaItem.BaseURL != "" {
-		return item.MediaItem.BaseURL, nil
+		return withImageSize(item.MediaItem.BaseURL), nil
+	}
+	if item.MediaItem.ID != "" {
+		baseURL, err := c.fetchMediaItemBaseURL(ctx, accessToken, item.MediaItem.ID)
+		if err != nil {
+			return "", err
+		}
+		return withImageSize(baseURL), nil
+	}
+	if item.MediaItem.ProductURL != "" {
+		return "", fmt.Errorf("画像表示用URLが取得できませんでした。OAuthスコープに photoslibrary.readonly.appcreateddata を追加してください")
 	}
 
 	return "", fmt.Errorf("Google Photos URLが取得できませんでした")
+}
+
+func (c *Client) fetchMediaItemBaseURL(ctx context.Context, accessToken string, mediaItemID string) (string, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf(mediaItemEndpoint, mediaItemID), nil)
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("Authorization", "Bearer "+accessToken)
+
+	res, err := c.httpClient.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("mediaItem取得に失敗しました: %w", err)
+	}
+	defer res.Body.Close()
+
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		return "", err
+	}
+	if res.StatusCode < 200 || res.StatusCode >= 300 {
+		lowerBody := strings.ToLower(string(body))
+		if strings.Contains(lowerBody, "insufficient authentication scopes") || strings.Contains(lowerBody, "access_token_scope_insufficient") {
+			return "", fmt.Errorf("画像表示用URLの取得に必要なOAuthスコープが不足しています。photoslibrary.readonly.appcreateddata を追加してRefresh Tokenを再発行してください")
+		}
+		return "", fmt.Errorf("mediaItem取得エラー: %s", string(body))
+	}
+
+	var mediaItem struct {
+		BaseURL string `json:"baseUrl"`
+	}
+	if err := json.Unmarshal(body, &mediaItem); err != nil {
+		return "", err
+	}
+	if mediaItem.BaseURL == "" {
+		return "", fmt.Errorf("mediaItemのbaseUrlが取得できませんでした")
+	}
+
+	return mediaItem.BaseURL, nil
+}
+
+func withImageSize(baseURL string) string {
+	return baseURL + "=w1200-h1200"
 }

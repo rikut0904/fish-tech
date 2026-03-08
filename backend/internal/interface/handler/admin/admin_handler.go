@@ -129,7 +129,7 @@ func (h *AdminHandler) UploadFishImage(c echo.Context) error {
 
 	imageURL, err := h.uploader.Upload(c.Request().Context(), name, data)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Google Photosへのアップロードに失敗しました"})
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
 	return c.JSON(http.StatusCreated, uploadImageResponse{ImageURL: imageURL})

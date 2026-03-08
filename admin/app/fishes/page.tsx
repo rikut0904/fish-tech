@@ -13,7 +13,6 @@ type FishesPageState = {
   fishCategory: string;
   fishDescription: string;
   fishImageUrl: string;
-  fishLinkUrl: string;
   uploadingImage: boolean;
 };
 
@@ -25,7 +24,6 @@ const initialState: FishesPageState = {
   fishCategory: "",
   fishDescription: "",
   fishImageUrl: "",
-  fishLinkUrl: "",
   uploadingImage: false,
 };
 
@@ -60,7 +58,7 @@ export default function FishesPage() {
         category: state.fishCategory,
         description: state.fishDescription,
         imageUrl: state.fishImageUrl,
-        linkUrl: state.fishLinkUrl,
+        linkUrl: "",
       });
       patchState((prev) => ({
         fishes: [createdFish, ...prev.fishes],
@@ -68,7 +66,6 @@ export default function FishesPage() {
         fishCategory: "",
         fishDescription: "",
         fishImageUrl: "",
-        fishLinkUrl: "",
       }));
     } catch (error) {
       patchState({
@@ -180,36 +177,32 @@ export default function FishesPage() {
                   placeholder="特徴やおすすめの食べ方"
                 />
               </label>
-              <label className="block text-sm font-medium">
-                画像アップロード（Google Photos）
+              <div className="block">
+                <span className="text-sm font-medium">画像（アップロードまたはURL）</span>
+                <label
+                  className="mt-2 flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 px-4 py-6 transition hover:border-slate-400 hover:bg-slate-100 disabled:pointer-events-none disabled:opacity-50"
+                  aria-disabled={state.uploadingImage}
+                >
+                  <input
+                    className="sr-only"
+                    type="file"
+                    accept="image/*"
+                    onChange={(event) => void handleUploadImage(event)}
+                    disabled={state.uploadingImage}
+                  />
+                  <span className="text-sm font-medium text-slate-600">
+                    {state.uploadingImage ? "アップロード中..." : "クリックしてファイルを選択"}
+                  </span>
+                  <span className="mt-1 text-xs text-slate-500">またはここにドラッグ＆ドロップ</span>
+                </label>
                 <input
-                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
-                  type="file"
-                  accept="image/*"
-                  onChange={(event) => void handleUploadImage(event)}
-                  disabled={state.uploadingImage}
-                />
-              </label>
-              <label className="block text-sm font-medium">
-                画像URL
-                <input
-                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
+                  className="mt-3 w-full rounded-lg border border-slate-300 px-3 py-2"
                   type="url"
                   value={state.fishImageUrl}
                   onChange={(event) => patchState({ fishImageUrl: event.target.value })}
-                  placeholder="Google PhotosのURLまたは画像URL"
+                  placeholder="画像URLを入力"
                 />
-              </label>
-              <label className="block text-sm font-medium">
-                関連リンクURL
-                <input
-                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
-                  type="url"
-                  value={state.fishLinkUrl}
-                  onChange={(event) => patchState({ fishLinkUrl: event.target.value })}
-                  placeholder="紹介ページなどのURL"
-                />
-              </label>
+              </div>
               {state.uploadingImage && (
                 <p className="text-sm text-slate-500">画像アップロード中...</p>
               )}
@@ -244,16 +237,6 @@ export default function FishesPage() {
                       )}
                       {fish.category && <p className="text-slate-500">カテゴリ: {fish.category}</p>}
                       {fish.description && <p className="text-slate-600">{fish.description}</p>}
-                      {fish.linkUrl && (
-                        <a
-                          href={fish.linkUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-sky-700 underline"
-                        >
-                          関連リンク
-                        </a>
-                      )}
                     </div>
                     <button
                       className="rounded-md border border-rose-400 px-3 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-50"
