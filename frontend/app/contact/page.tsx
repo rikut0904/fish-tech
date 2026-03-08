@@ -8,7 +8,7 @@ export default function ContactPage() {
     const [message, setMessage] = useState("");
     const [submitted, setSubmitted] = useState(false);
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         // 本来は API に送信するが、まだ未実装のため擬似送信とする
         setSubmitted(true);
