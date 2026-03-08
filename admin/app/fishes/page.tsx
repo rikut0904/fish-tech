@@ -166,6 +166,7 @@ export default function FishesPage() {
                   value={state.fishCategory}
                   onChange={(event) => patchState({ fishCategory: event.target.value })}
                   placeholder="例: 白身魚"
+                  required
                 />
               </label>
               <label className="block text-sm font-medium">

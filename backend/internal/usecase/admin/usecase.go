@@ -15,6 +15,8 @@ import (
 var (
 	// ErrInvalidFishName は魚名が不正な場合のエラーです。
 	ErrInvalidFishName = errors.New("魚名は必須です")
+	// ErrInvalidFishCategory はカテゴリが不正な場合のエラーです。
+	ErrInvalidFishCategory = errors.New("カテゴリは必須です")
 	// ErrInvalidPair は相性データが不正な場合のエラーです。
 	ErrInvalidPair = errors.New("相性データが不正です")
 	// ErrPairAlreadyExists は同一ペアが既に存在する場合のエラーです。
@@ -67,11 +69,15 @@ func (u *adminUseCase) CreateFish(ctx context.Context, name string, category str
 	if trimmedName == "" {
 		return adminDomain.Fish{}, ErrInvalidFishName
 	}
+	trimmedCategory := strings.TrimSpace(category)
+	if trimmedCategory == "" {
+		return adminDomain.Fish{}, ErrInvalidFishCategory
+	}
 
 	fish := adminDomain.Fish{
 		ID:          uuid.NewString(),
 		Name:        trimmedName,
-		Category:    strings.TrimSpace(category),
+		Category:    trimmedCategory,
 		Description: strings.TrimSpace(description),
 		ImageURL:    strings.TrimSpace(imageURL),
 		LinkURL:     strings.TrimSpace(linkURL),

@@ -81,7 +81,7 @@ func (h *AdminHandler) CreateFish(c echo.Context) error {
 		req.LinkURL,
 	)
 	if err != nil {
-		if errors.Is(err, adminUseCase.ErrInvalidFishName) {
+		if errors.Is(err, adminUseCase.ErrInvalidFishName) || errors.Is(err, adminUseCase.ErrInvalidFishCategory) {
 			return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
 		}
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "魚の登録に失敗しました"})
