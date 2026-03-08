@@ -81,11 +81,11 @@ export default function FishEncyclopedia() {
                 ].map((item, idx) => (
                   <div key={idx} className="flex border-b border-gray-50 pb-2">
                     <span className="w-32 font-bold text-gray-600">{item.label}</span>
-                    <span className="text-gray-800">～ {item.value}</span>
+                    <span className="text-gray-800"> {item.value}</span>
                   </div>
                 ))}
                 <div className="pt-2">
-                  <p className="font-bold text-blue-600 mb-1">相性の良い食材</p>
+                  <p className="font-bold text-blue-600 mb-1">相性の良い魚</p>
                   <p className="text-gray-600">{selectedFish.details.compatibilityGood.join('、')}</p>
                 </div>
                 <button className="w-full py-4 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition shadow-lg shadow-blue-200">
