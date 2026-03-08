@@ -30,6 +30,26 @@ export const metadata: Metadata = {
     title: "Fish-Tech",
     description: "金沢の魚を紹介するアプリ（fish-tech）",
     siteName: "Fish-Tech",
+    url: "https://fish-tech.example",
+    images: [
+      {
+        url: "/fishtech-og.webp",
+        width: 1200,
+        height: 630,
+        alt: "Fish-Tech — 金沢の魚",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Fish-Tech",
+    description: "金沢の魚を紹介するアプリ（fish-tech）",
+    images: ["/fishtech-og.webp"],
+  },
+  icons: {
+    icon: "/fishtech-favicon.webp",
+    shortcut: "/fishtech-favicon.webp",
+    apple: "/fishtech-favicon.webp",
   },
 };
 
