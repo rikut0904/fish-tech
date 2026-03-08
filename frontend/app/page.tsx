@@ -3,6 +3,7 @@ import Header from "@/app/components/header";
 import HeroSection from "@/app/components/hero_section";
 import FeatureSection from "@/app/components/feature_section";
 import FishCardList from "@/app/components/fish_card_list";
+import MatchingList from "@/app/components/matching_list";
 import Footer from "@/app/components/footer";
 
 export default function Home() {
@@ -16,6 +17,7 @@ export default function Home() {
           <h2 className="text-xl font-bold mb-4">おすすめの魚種</h2>
           <FishCardList />
         </section>
+        <MatchingList />
       </main>
       <Footer />
     </div>
