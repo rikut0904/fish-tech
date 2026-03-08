@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="g" x1="0" x2="1">
+      <stop offset="0" stop-color="#06b6d4"/>
+      <stop offset="1" stop-color="#06b6a4"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#g)" />
+  <g fill="#fff" font-family="'Noto Sans JP',sans-serif">
+    <text x="80" y="220" font-size="64" font-weight="700">Fish-Tech</text>
+    <text x="80" y="300" font-size="28">金沢の魚を紹介するアプリ</text>
+    <text x="80" y="380" font-size="20">地魚・レシピ・漁業の魅力を伝える</text>
+  </g>
+  <g transform="translate(880,160)">
+    <circle cx="80" cy="80" r="80" fill="#fff" opacity="0.08" />
+    <text x="20" y="100" font-size="72" fill="#fff" font-family="sans-serif">🐟</text>
+  </g>
+</svg>
