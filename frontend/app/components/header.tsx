@@ -15,12 +15,18 @@ export default function Header() {
                 <Link href="/recipe">
                     <span className="text-blue-700 hover:underline">レシピ</span>
                 </Link>
+                <Link href="/#encyclopedia">
+                    <span className="text-blue-700 hover:underline">魚図鑑</span>
+                </Link>
+                <Link href="/about">
+                    <span className="text-blue-700 hover:underline">このサイトについて</span>
+                </Link>
                 <Link href="/contact">
                     <span className="text-blue-700 hover:underline">お問い合わせ</span>
                 </Link>
-                <Link href="/login">
+                {/* <Link href="/login">
                     <span className="text-blue-700 hover:underline">ログイン</span>
-                </Link>
+                </Link> */}
             </nav>
         </header>
     );
