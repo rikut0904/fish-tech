@@ -16,8 +16,8 @@ const allFishData: Fish[] = Array.from({ length: 120 }, (_, i) => ({
     season: i % 4 === 0 ? "春" : i % 4 === 1 ? "夏" : i % 4 === 2 ? "秋" : "冬",
     type: i % 2 === 0 ? "白身" : "青物",
     fishingMethod: "定置網", recipe: "塩焼き、干物",
-    compatibilityGood: ["スダチ", "大根おろし"],
-    compatibilityBad: ["生クリーム"]
+    goodCompatibility: ["スダチ", "大根おろし"],
+    badCompatibility: ["生クリーム"]
   }
 }));
 
@@ -87,7 +87,7 @@ export default function FishEncyclopedia() {
                 ))}
                 <div className="pt-2">
                   <p className="font-bold text-blue-600 mb-1">相性の良い食材</p>
-                  <p className="text-gray-600">{selectedFish.details.compatibilityGood.join('、')}</p>
+                  <p className="..."> {selectedFish.details.goodCompatibility.join('、')} </p>
                 </div>
                 <button className="w-full py-4 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition shadow-lg shadow-blue-200">
                   食べるまでのストーリーを見る
