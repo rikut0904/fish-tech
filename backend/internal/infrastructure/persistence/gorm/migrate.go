@@ -27,6 +27,7 @@ func AutoMigrateAll(db *gorm.DB) error {
 		&model.FishUserLinks{},
 		&model.UserPlaceLinks{},
 		&model.UserRecipeLinks{},
+		&model.HotpepperSmallAreaCache{},
 		&model.AdminFish{},
 		&model.AdminFishPair{},
 	); err != nil {
@@ -40,6 +41,9 @@ func AutoMigrateAll(db *gorm.DB) error {
 		return err
 	}
 	if err := migratePlaceCacheAreaAndIndexes(db); err != nil {
+		return err
+	}
+	if err := migrateHotpepperSmallAreaCacheIndexes(db); err != nil {
 		return err
 	}
 	if err := migrateUserFishLinks(db); err != nil {
@@ -135,119 +139,49 @@ func migratePlaceCacheTel(db *gorm.DB) error {
 	return nil
 }
 
+func migrateHotpepperSmallAreaCacheIndexes(db *gorm.DB) error {
+	if !db.Migrator().HasTable(&model.HotpepperSmallAreaCache{}) {
+		return nil
+	}
+
+	if err := db.Exec(`CREATE INDEX IF NOT EXISTS idx_hsac_large_area_fetched_at ON hotpepper_small_area_cache (large_area_code, fetched_at DESC)`).Error; err != nil {
+		return fmt.Errorf("hotpepper_small_area_cache インデックス作成に失敗しました: %w", err)
+	}
+
+	return nil
+}
+
 func migrateFishUserLinks(db *gorm.DB) error {
 	if !db.Migrator().HasTable(&model.FishUserLinks{}) {
 		return nil
 	}
 
-	if err := db.Exec(`
-		INSERT INTO fish_user_links (fish_id, user_id, is_likes, created_at)
-		SELECT f.id, u.user_id, FALSE, NOW()
-		FROM fish AS f
-		CROSS JOIN "user" AS u
-		ON CONFLICT (fish_id, user_id) DO NOTHING
-	`).Error; err != nil {
-		return fmt.Errorf("fish_user_links の初期バックフィルに失敗しました: %w", err)
+	if err := dropLegacyFishUserLinksAutomation(db); err != nil {
+		return err
 	}
-
-	if err := db.Exec(`
-		CREATE OR REPLACE FUNCTION sync_fish_user_links_new_fish()
-		RETURNS trigger AS $$
+	if err := ensureForeignKeyConstraint(db, `
+		DO $$
 		BEGIN
-			INSERT INTO fish_user_links (fish_id, user_id, is_likes, created_at)
-			SELECT NEW.id, u.user_id, FALSE, NOW()
-			FROM "user" AS u
-			ON CONFLICT (fish_id, user_id) DO NOTHING;
-			RETURN NEW;
-		END;
-		$$ LANGUAGE plpgsql;
-	`).Error; err != nil {
-		return fmt.Errorf("fish_user_links 新規魚トリガー関数の作成に失敗しました: %w", err)
+			IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_fish_user_links_fish') THEN
+				ALTER TABLE fish_user_links
+				ADD CONSTRAINT fk_fish_user_links_fish
+				FOREIGN KEY (fish_id) REFERENCES fish(id) ON DELETE CASCADE;
+			END IF;
+		END $$;
+	`); err != nil {
+		return fmt.Errorf("fish_user_links.fish_id FK制約の追加に失敗しました: %w", err)
 	}
-
-	if err := db.Exec(`DROP TRIGGER IF EXISTS trg_sync_fish_user_links_new_fish ON fish;`).Error; err != nil {
-		return fmt.Errorf("fish_user_links 新規魚トリガーの削除に失敗しました: %w", err)
-	}
-	if err := db.Exec(`
-		CREATE TRIGGER trg_sync_fish_user_links_new_fish
-		AFTER INSERT ON fish
-		FOR EACH ROW
-		EXECUTE FUNCTION sync_fish_user_links_new_fish();
-	`).Error; err != nil {
-		return fmt.Errorf("fish_user_links 新規魚トリガーの作成に失敗しました: %w", err)
-	}
-
-	if err := db.Exec(`
-		CREATE OR REPLACE FUNCTION sync_fish_user_links_new_user()
-		RETURNS trigger AS $$
+	if err := ensureForeignKeyConstraint(db, `
+		DO $$
 		BEGIN
-			INSERT INTO fish_user_links (fish_id, user_id, is_likes, created_at)
-			SELECT f.id, NEW.user_id, FALSE, NOW()
-			FROM fish AS f
-			ON CONFLICT (fish_id, user_id) DO NOTHING;
-			RETURN NEW;
-		END;
-		$$ LANGUAGE plpgsql;
-	`).Error; err != nil {
-		return fmt.Errorf("fish_user_links 新規ユーザートリガー関数の作成に失敗しました: %w", err)
-	}
-
-	if err := db.Exec(`DROP TRIGGER IF EXISTS trg_sync_fish_user_links_new_user ON "user";`).Error; err != nil {
-		return fmt.Errorf("fish_user_links 新規ユーザートリガーの削除に失敗しました: %w", err)
-	}
-	if err := db.Exec(`
-		CREATE TRIGGER trg_sync_fish_user_links_new_user
-		AFTER INSERT ON "user"
-		FOR EACH ROW
-		EXECUTE FUNCTION sync_fish_user_links_new_user();
-	`).Error; err != nil {
-		return fmt.Errorf("fish_user_links 新規ユーザートリガーの作成に失敗しました: %w", err)
-	}
-
-	if err := db.Exec(`
-		CREATE OR REPLACE FUNCTION cleanup_fish_user_links_on_fish_delete()
-		RETURNS trigger AS $$
-		BEGIN
-			DELETE FROM fish_user_links WHERE fish_id = OLD.id;
-			RETURN OLD;
-		END;
-		$$ LANGUAGE plpgsql;
-	`).Error; err != nil {
-		return fmt.Errorf("fish_user_links 魚削除クリーンアップ関数の作成に失敗しました: %w", err)
-	}
-	if err := db.Exec(`DROP TRIGGER IF EXISTS trg_cleanup_fish_user_links_on_fish_delete ON fish;`).Error; err != nil {
-		return fmt.Errorf("fish_user_links 魚削除クリーンアップトリガーの削除に失敗しました: %w", err)
-	}
-	if err := db.Exec(`
-		CREATE TRIGGER trg_cleanup_fish_user_links_on_fish_delete
-		AFTER DELETE ON fish
-		FOR EACH ROW
-		EXECUTE FUNCTION cleanup_fish_user_links_on_fish_delete();
-	`).Error; err != nil {
-		return fmt.Errorf("fish_user_links 魚削除クリーンアップトリガーの作成に失敗しました: %w", err)
-	}
-
-	if err := db.Exec(`
-		CREATE OR REPLACE FUNCTION cleanup_fish_user_links_on_user_delete()
-		RETURNS trigger AS $$
-		BEGIN
-			DELETE FROM fish_user_links WHERE user_id = OLD.user_id;
-			RETURN OLD;
-		END;
-		$$ LANGUAGE plpgsql;
-	`).Error; err != nil {
-		return fmt.Errorf("fish_user_links ユーザー削除クリーンアップ関数の作成に失敗しました: %w", err)
-	}
-	if err := db.Exec(`DROP TRIGGER IF EXISTS trg_cleanup_fish_user_links_on_user_delete ON "user";`).Error; err != nil {
-		return fmt.Errorf("fish_user_links ユーザー削除クリーンアップトリガーの削除に失敗しました: %w", err)
-	}
-	if err := db.Exec(`
-		CREATE TRIGGER trg_cleanup_fish_user_links_on_user_delete
-		AFTER DELETE ON "user"
-		FOR EACH ROW
-		EXECUTE FUNCTION cleanup_fish_user_links_on_user_delete();
-	`).Error; err != nil {
-		return fmt.Errorf("fish_user_links ユーザー削除クリーンアップトリガーの作成に失敗しました: %w", err)
+			IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_fish_user_links_user') THEN
+				ALTER TABLE fish_user_links
+				ADD CONSTRAINT fk_fish_user_links_user
+				FOREIGN KEY (user_id) REFERENCES "user"(user_id) ON DELETE CASCADE;
+			END IF;
+		END $$;
+	`); err != nil {
+		return fmt.Errorf("fish_user_links.user_id FK制約の追加に失敗しました: %w", err)
 	}
 
 	return nil
@@ -258,114 +192,32 @@ func migrateUserPlaceLinks(db *gorm.DB) error {
 		return nil
 	}
 
-	if err := db.Exec(`
-		INSERT INTO user_place_links (user_id, place_id, is_likes, created_at)
-		SELECT u.user_id, p.id, FALSE, NOW()
-		FROM "user" AS u
-		CROSS JOIN place_cache AS p
-		ON CONFLICT (user_id, place_id) DO NOTHING
-	`).Error; err != nil {
-		return fmt.Errorf("user_place_links の初期バックフィルに失敗しました: %w", err)
+	if err := dropLegacyUserPlaceLinksAutomation(db); err != nil {
+		return err
 	}
-
-	if err := db.Exec(`
-		CREATE OR REPLACE FUNCTION sync_user_place_links_new_place()
-		RETURNS trigger AS $$
+	if err := ensureForeignKeyConstraint(db, `
+		DO $$
 		BEGIN
-			INSERT INTO user_place_links (user_id, place_id, is_likes, created_at)
-			SELECT u.user_id, NEW.id, FALSE, NOW()
-			FROM "user" AS u
-			ON CONFLICT (user_id, place_id) DO NOTHING;
-			RETURN NEW;
-		END;
-		$$ LANGUAGE plpgsql;
-	`).Error; err != nil {
-		return fmt.Errorf("user_place_links 新規店舗トリガー関数の作成に失敗しました: %w", err)
+			IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_user_place_links_user') THEN
+				ALTER TABLE user_place_links
+				ADD CONSTRAINT fk_user_place_links_user
+				FOREIGN KEY (user_id) REFERENCES "user"(user_id) ON DELETE CASCADE;
+			END IF;
+		END $$;
+	`); err != nil {
+		return fmt.Errorf("user_place_links.user_id FK制約の追加に失敗しました: %w", err)
 	}
-
-	if err := db.Exec(`DROP TRIGGER IF EXISTS trg_sync_user_place_links_new_place ON place_cache;`).Error; err != nil {
-		return fmt.Errorf("user_place_links 新規店舗トリガーの削除に失敗しました: %w", err)
-	}
-	if err := db.Exec(`
-		CREATE TRIGGER trg_sync_user_place_links_new_place
-		AFTER INSERT ON place_cache
-		FOR EACH ROW
-		EXECUTE FUNCTION sync_user_place_links_new_place();
-	`).Error; err != nil {
-		return fmt.Errorf("user_place_links 新規店舗トリガーの作成に失敗しました: %w", err)
-	}
-
-	if err := db.Exec(`
-		CREATE OR REPLACE FUNCTION sync_user_place_links_new_user()
-		RETURNS trigger AS $$
+	if err := ensureForeignKeyConstraint(db, `
+		DO $$
 		BEGIN
-			INSERT INTO user_place_links (user_id, place_id, is_likes, created_at)
-			SELECT NEW.user_id, p.id, FALSE, NOW()
-			FROM place_cache AS p
-			ON CONFLICT (user_id, place_id) DO NOTHING;
-			RETURN NEW;
-		END;
-		$$ LANGUAGE plpgsql;
-	`).Error; err != nil {
-		return fmt.Errorf("user_place_links 新規ユーザートリガー関数の作成に失敗しました: %w", err)
-	}
-
-	if err := db.Exec(`DROP TRIGGER IF EXISTS trg_sync_user_place_links_new_user ON "user";`).Error; err != nil {
-		return fmt.Errorf("user_place_links 新規ユーザートリガーの削除に失敗しました: %w", err)
-	}
-	if err := db.Exec(`
-		CREATE TRIGGER trg_sync_user_place_links_new_user
-		AFTER INSERT ON "user"
-		FOR EACH ROW
-		EXECUTE FUNCTION sync_user_place_links_new_user();
-	`).Error; err != nil {
-		return fmt.Errorf("user_place_links 新規ユーザートリガーの作成に失敗しました: %w", err)
-	}
-
-	if err := db.Exec(`
-		CREATE OR REPLACE FUNCTION cleanup_user_place_links_on_place_delete()
-		RETURNS trigger AS $$
-		BEGIN
-			DELETE FROM user_place_links WHERE place_id = OLD.id;
-			RETURN OLD;
-		END;
-		$$ LANGUAGE plpgsql;
-	`).Error; err != nil {
-		return fmt.Errorf("user_place_links 店舗削除クリーンアップ関数の作成に失敗しました: %w", err)
-	}
-	if err := db.Exec(`DROP TRIGGER IF EXISTS trg_cleanup_user_place_links_on_place_delete ON place_cache;`).Error; err != nil {
-		return fmt.Errorf("user_place_links 店舗削除クリーンアップトリガーの削除に失敗しました: %w", err)
-	}
-	if err := db.Exec(`
-		CREATE TRIGGER trg_cleanup_user_place_links_on_place_delete
-		AFTER DELETE ON place_cache
-		FOR EACH ROW
-		EXECUTE FUNCTION cleanup_user_place_links_on_place_delete();
-	`).Error; err != nil {
-		return fmt.Errorf("user_place_links 店舗削除クリーンアップトリガーの作成に失敗しました: %w", err)
-	}
-
-	if err := db.Exec(`
-		CREATE OR REPLACE FUNCTION cleanup_user_place_links_on_user_delete()
-		RETURNS trigger AS $$
-		BEGIN
-			DELETE FROM user_place_links WHERE user_id = OLD.user_id;
-			RETURN OLD;
-		END;
-		$$ LANGUAGE plpgsql;
-	`).Error; err != nil {
-		return fmt.Errorf("user_place_links ユーザー削除クリーンアップ関数の作成に失敗しました: %w", err)
-	}
-	if err := db.Exec(`DROP TRIGGER IF EXISTS trg_cleanup_user_place_links_on_user_delete ON "user";`).Error; err != nil {
-		return fmt.Errorf("user_place_links ユーザー削除クリーンアップトリガーの削除に失敗しました: %w", err)
-	}
-	if err := db.Exec(`
-		CREATE TRIGGER trg_cleanup_user_place_links_on_user_delete
-		AFTER DELETE ON "user"
-		FOR EACH ROW
-		EXECUTE FUNCTION cleanup_user_place_links_on_user_delete();
-	`).Error; err != nil {
-		return fmt.Errorf("user_place_links ユーザー削除クリーンアップトリガーの作成に失敗しました: %w", err)
+			IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_user_place_links_place') THEN
+				ALTER TABLE user_place_links
+				ADD CONSTRAINT fk_user_place_links_place
+				FOREIGN KEY (place_id) REFERENCES place_cache(id) ON DELETE CASCADE;
+			END IF;
+		END $$;
+	`); err != nil {
+		return fmt.Errorf("user_place_links.place_id FK制約の追加に失敗しました: %w", err)
 	}
 
 	return nil
@@ -376,113 +228,94 @@ func migrateUserFishLinks(db *gorm.DB) error {
 		return nil
 	}
 
-	if err := db.Exec(`
-		INSERT INTO user_fish_links (user_id, fish_id, "like", created_at)
-		SELECT u.user_id, f.id, FALSE, NOW()
-		FROM "user" AS u
-		CROSS JOIN fish AS f
-		ON CONFLICT (user_id, fish_id) DO NOTHING
-	`).Error; err != nil {
-		return fmt.Errorf("user_fish_links の初期バックフィルに失敗しました: %w", err)
+	if err := dropLegacyUserFishLinksAutomation(db); err != nil {
+		return err
 	}
-
-	if err := db.Exec(`
-		CREATE OR REPLACE FUNCTION sync_user_fish_links_new_fish()
-		RETURNS trigger AS $$
+	if err := ensureForeignKeyConstraint(db, `
+		DO $$
 		BEGIN
-			INSERT INTO user_fish_links (user_id, fish_id, "like", created_at)
-			SELECT u.user_id, NEW.id, FALSE, NOW()
-			FROM "user" AS u
-			ON CONFLICT (user_id, fish_id) DO NOTHING;
-			RETURN NEW;
-		END;
-		$$ LANGUAGE plpgsql;
-	`).Error; err != nil {
-		return fmt.Errorf("user_fish_links 新規魚トリガー関数の作成に失敗しました: %w", err)
+			IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_user_fish_links_user') THEN
+				ALTER TABLE user_fish_links
+				ADD CONSTRAINT fk_user_fish_links_user
+				FOREIGN KEY (user_id) REFERENCES "user"(user_id) ON DELETE CASCADE;
+			END IF;
+		END $$;
+	`); err != nil {
+		return fmt.Errorf("user_fish_links.user_id FK制約の追加に失敗しました: %w", err)
 	}
-	if err := db.Exec(`DROP TRIGGER IF EXISTS trg_sync_user_fish_links_new_fish ON fish;`).Error; err != nil {
-		return fmt.Errorf("user_fish_links 新規魚トリガーの削除に失敗しました: %w", err)
-	}
-	if err := db.Exec(`
-		CREATE TRIGGER trg_sync_user_fish_links_new_fish
-		AFTER INSERT ON fish
-		FOR EACH ROW
-		EXECUTE FUNCTION sync_user_fish_links_new_fish();
-	`).Error; err != nil {
-		return fmt.Errorf("user_fish_links 新規魚トリガーの作成に失敗しました: %w", err)
-	}
-
-	if err := db.Exec(`
-		CREATE OR REPLACE FUNCTION sync_user_fish_links_new_user()
-		RETURNS trigger AS $$
+	if err := ensureForeignKeyConstraint(db, `
+		DO $$
 		BEGIN
-			INSERT INTO user_fish_links (user_id, fish_id, "like", created_at)
-			SELECT NEW.user_id, f.id, FALSE, NOW()
-			FROM fish AS f
-			ON CONFLICT (user_id, fish_id) DO NOTHING;
-			RETURN NEW;
-		END;
-		$$ LANGUAGE plpgsql;
-	`).Error; err != nil {
-		return fmt.Errorf("user_fish_links 新規ユーザートリガー関数の作成に失敗しました: %w", err)
-	}
-	if err := db.Exec(`DROP TRIGGER IF EXISTS trg_sync_user_fish_links_new_user ON "user";`).Error; err != nil {
-		return fmt.Errorf("user_fish_links 新規ユーザートリガーの削除に失敗しました: %w", err)
-	}
-	if err := db.Exec(`
-		CREATE TRIGGER trg_sync_user_fish_links_new_user
-		AFTER INSERT ON "user"
-		FOR EACH ROW
-		EXECUTE FUNCTION sync_user_fish_links_new_user();
-	`).Error; err != nil {
-		return fmt.Errorf("user_fish_links 新規ユーザートリガーの作成に失敗しました: %w", err)
-	}
-
-	if err := db.Exec(`
-		CREATE OR REPLACE FUNCTION cleanup_user_fish_links_on_fish_delete()
-		RETURNS trigger AS $$
-		BEGIN
-			DELETE FROM user_fish_links WHERE fish_id = OLD.id;
-			RETURN OLD;
-		END;
-		$$ LANGUAGE plpgsql;
-	`).Error; err != nil {
-		return fmt.Errorf("user_fish_links 魚削除クリーンアップ関数の作成に失敗しました: %w", err)
-	}
-	if err := db.Exec(`DROP TRIGGER IF EXISTS trg_cleanup_user_fish_links_on_fish_delete ON fish;`).Error; err != nil {
-		return fmt.Errorf("user_fish_links 魚削除クリーンアップトリガーの削除に失敗しました: %w", err)
-	}
-	if err := db.Exec(`
-		CREATE TRIGGER trg_cleanup_user_fish_links_on_fish_delete
-		AFTER DELETE ON fish
-		FOR EACH ROW
-		EXECUTE FUNCTION cleanup_user_fish_links_on_fish_delete();
-	`).Error; err != nil {
-		return fmt.Errorf("user_fish_links 魚削除クリーンアップトリガーの作成に失敗しました: %w", err)
-	}
-
-	if err := db.Exec(`
-		CREATE OR REPLACE FUNCTION cleanup_user_fish_links_on_user_delete()
-		RETURNS trigger AS $$
-		BEGIN
-			DELETE FROM user_fish_links WHERE user_id = OLD.user_id;
-			RETURN OLD;
-		END;
-		$$ LANGUAGE plpgsql;
-	`).Error; err != nil {
-		return fmt.Errorf("user_fish_links ユーザー削除クリーンアップ関数の作成に失敗しました: %w", err)
-	}
-	if err := db.Exec(`DROP TRIGGER IF EXISTS trg_cleanup_user_fish_links_on_user_delete ON "user";`).Error; err != nil {
-		return fmt.Errorf("user_fish_links ユーザー削除クリーンアップトリガーの削除に失敗しました: %w", err)
-	}
-	if err := db.Exec(`
-		CREATE TRIGGER trg_cleanup_user_fish_links_on_user_delete
-		AFTER DELETE ON "user"
-		FOR EACH ROW
-		EXECUTE FUNCTION cleanup_user_fish_links_on_user_delete();
-	`).Error; err != nil {
-		return fmt.Errorf("user_fish_links ユーザー削除クリーンアップトリガーの作成に失敗しました: %w", err)
+			IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_user_fish_links_fish') THEN
+				ALTER TABLE user_fish_links
+				ADD CONSTRAINT fk_user_fish_links_fish
+				FOREIGN KEY (fish_id) REFERENCES fish(id) ON DELETE CASCADE;
+			END IF;
+		END $$;
+	`); err != nil {
+		return fmt.Errorf("user_fish_links.fish_id FK制約の追加に失敗しました: %w", err)
 	}
 
 	return nil
+}
+
+func dropLegacyFishUserLinksAutomation(db *gorm.DB) error {
+	queries := []string{
+		`DROP TRIGGER IF EXISTS trg_sync_fish_user_links_new_fish ON fish;`,
+		`DROP TRIGGER IF EXISTS trg_sync_fish_user_links_new_user ON "user";`,
+		`DROP TRIGGER IF EXISTS trg_cleanup_fish_user_links_on_fish_delete ON fish;`,
+		`DROP TRIGGER IF EXISTS trg_cleanup_fish_user_links_on_user_delete ON "user";`,
+		`DROP FUNCTION IF EXISTS sync_fish_user_links_new_fish();`,
+		`DROP FUNCTION IF EXISTS sync_fish_user_links_new_user();`,
+		`DROP FUNCTION IF EXISTS cleanup_fish_user_links_on_fish_delete();`,
+		`DROP FUNCTION IF EXISTS cleanup_fish_user_links_on_user_delete();`,
+	}
+	for _, query := range queries {
+		if err := db.Exec(query).Error; err != nil {
+			return fmt.Errorf("fish_user_links 旧トリガー/関数削除に失敗しました: %w", err)
+		}
+	}
+	return nil
+}
+
+func dropLegacyUserPlaceLinksAutomation(db *gorm.DB) error {
+	queries := []string{
+		`DROP TRIGGER IF EXISTS trg_sync_user_place_links_new_place ON place_cache;`,
+		`DROP TRIGGER IF EXISTS trg_sync_user_place_links_new_user ON "user";`,
+		`DROP TRIGGER IF EXISTS trg_cleanup_user_place_links_on_place_delete ON place_cache;`,
+		`DROP TRIGGER IF EXISTS trg_cleanup_user_place_links_on_user_delete ON "user";`,
+		`DROP FUNCTION IF EXISTS sync_user_place_links_new_place();`,
+		`DROP FUNCTION IF EXISTS sync_user_place_links_new_user();`,
+		`DROP FUNCTION IF EXISTS cleanup_user_place_links_on_place_delete();`,
+		`DROP FUNCTION IF EXISTS cleanup_user_place_links_on_user_delete();`,
+	}
+	for _, query := range queries {
+		if err := db.Exec(query).Error; err != nil {
+			return fmt.Errorf("user_place_links 旧トリガー/関数削除に失敗しました: %w", err)
+		}
+	}
+	return nil
+}
+
+func dropLegacyUserFishLinksAutomation(db *gorm.DB) error {
+	queries := []string{
+		`DROP TRIGGER IF EXISTS trg_sync_user_fish_links_new_fish ON fish;`,
+		`DROP TRIGGER IF EXISTS trg_sync_user_fish_links_new_user ON "user";`,
+		`DROP TRIGGER IF EXISTS trg_cleanup_user_fish_links_on_fish_delete ON fish;`,
+		`DROP TRIGGER IF EXISTS trg_cleanup_user_fish_links_on_user_delete ON "user";`,
+		`DROP FUNCTION IF EXISTS sync_user_fish_links_new_fish();`,
+		`DROP FUNCTION IF EXISTS sync_user_fish_links_new_user();`,
+		`DROP FUNCTION IF EXISTS cleanup_user_fish_links_on_fish_delete();`,
+		`DROP FUNCTION IF EXISTS cleanup_user_fish_links_on_user_delete();`,
+	}
+	for _, query := range queries {
+		if err := db.Exec(query).Error; err != nil {
+			return fmt.Errorf("user_fish_links 旧トリガー/関数削除に失敗しました: %w", err)
+		}
+	}
+	return nil
+}
+
+func ensureForeignKeyConstraint(db *gorm.DB, query string) error {
+	return db.Exec(query).Error
 }
