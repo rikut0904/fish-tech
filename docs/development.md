@@ -61,6 +61,13 @@ go mod download
 go run ./cmd/api/main.go
 ```
 
+### バックエンド環境変数
+
+```env
+DATABASE_URL=postgresql://user:password@host:port/database
+HOTPEPPER_API_KEY=xxxxxxxxxxxxxxxx
+```
+
 Google Photosへの画像アップロード機能を利用する場合は、下記の手順で取得した値を `backend/.env` に設定してください。
 
 ### Google Photos連携の設定手順
