@@ -210,6 +210,8 @@ http://localhost:8080/api
 ※ `cityCode` が石川県の `small_area` に存在しない場合は `404` を返します。
 ※ `favorite=true` で `userId` 未指定の場合は `400` を返します。  
 ※ キャッシュは `fetched_at` が30日以内のデータを使用し、該当キャッシュが無い（または古い）場合は HotPepper API を再取得します。
+※ `cityCode` 判定用の `small_area` 一覧はDBにキャッシュし、1年経過時のみ再取得します。
+※ `user_*_links` / `fish_user_links` / `user_place_links` は全組み合わせ事前作成を行わず、操作時にオンデマンド作成します。
 
 **レスポンス**
 

@@ -16,6 +16,7 @@ import (
 
 const cacheValidDuration = time.Hour * 24 * 30
 const asyncUpsertBatchSize = 100
+const smallAreaCacheValidDuration = time.Hour * 24 * 365
 
 type placeCacheRow struct {
 	ID            string
@@ -117,7 +118,97 @@ func (r *PlaceRepository) findFishIDByName(ctx context.Context, fishName string)
 
 // IsValidSmallAreaCode は石川県のsmall_areaコードとして有効かを返します。
 func (r *PlaceRepository) IsValidSmallAreaCode(ctx context.Context, largeAreaCode string, smallAreaCode string) (bool, error) {
-	return r.hotpepperClient.IsValidSmallAreaCode(ctx, largeAreaCode, smallAreaCode)
+	trimmedLargeAreaCode := strings.TrimSpace(largeAreaCode)
+	trimmedSmallAreaCode := strings.TrimSpace(smallAreaCode)
+	if trimmedLargeAreaCode == "" || trimmedSmallAreaCode == "" {
+		return false, nil
+	}
+
+	freshFrom := time.Now().Add(-smallAreaCacheValidDuration)
+	freshExists, err := r.hasFreshSmallAreaCache(ctx, trimmedLargeAreaCode, freshFrom)
+	if err != nil {
+		return false, err
+	}
+	if !freshExists {
+		fetched, fetchErr := r.hotpepperClient.FetchSmallAreasByLargeArea(ctx, trimmedLargeAreaCode)
+		if fetchErr != nil {
+			return false, fetchErr
+		}
+		if upsertErr := r.replaceSmallAreaCache(ctx, trimmedLargeAreaCode, fetched, time.Now()); upsertErr != nil {
+			return false, upsertErr
+		}
+		for _, area := range fetched {
+			if strings.EqualFold(strings.TrimSpace(area.Code), trimmedSmallAreaCode) {
+				return true, nil
+			}
+		}
+		return false, nil
+	}
+
+	var count int64
+	if err := r.db.WithContext(ctx).
+		Table("hotpepper_small_area_cache").
+		Where("large_area_code = ? AND code = ? AND fetched_at >= ?", trimmedLargeAreaCode, trimmedSmallAreaCode, freshFrom).
+		Count(&count).Error; err != nil {
+		return false, err
+	}
+
+	return count > 0, nil
+}
+
+func (r *PlaceRepository) hasFreshSmallAreaCache(ctx context.Context, largeAreaCode string, freshFrom time.Time) (bool, error) {
+	var count int64
+	if err := r.db.WithContext(ctx).
+		Table("hotpepper_small_area_cache").
+		Where("large_area_code = ? AND fetched_at >= ?", largeAreaCode, freshFrom).
+		Count(&count).Error; err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}
+
+func (r *PlaceRepository) replaceSmallAreaCache(ctx context.Context, largeAreaCode string, areas []hotpepper.SmallArea, fetchedAt time.Time) error {
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Table("hotpepper_small_area_cache").
+			Where("large_area_code = ?", largeAreaCode).
+			Delete(&model.HotpepperSmallAreaCache{}).Error; err != nil {
+			return err
+		}
+
+		if len(areas) == 0 {
+			return nil
+		}
+
+		rows := make([]model.HotpepperSmallAreaCache, 0, len(areas))
+		for _, area := range areas {
+			code := strings.TrimSpace(area.Code)
+			if code == "" {
+				continue
+			}
+			name := strings.TrimSpace(area.Name)
+			middleArea := strings.TrimSpace(area.MiddleArea)
+			row := model.HotpepperSmallAreaCache{
+				LargeAreaCode: largeAreaCode,
+				Code:          code,
+				FetchedAt:     fetchedAt,
+			}
+			if name != "" {
+				row.Name = &name
+			}
+			if middleArea != "" {
+				row.MiddleArea = &middleArea
+			}
+			rows = append(rows, row)
+		}
+		if len(rows) == 0 {
+			return nil
+		}
+
+		return tx.Clauses(clause.OnConflict{
+			Columns:   []clause.Column{{Name: "large_area_code"}, {Name: "code"}},
+			DoUpdates: clause.AssignmentColumns([]string{"name", "middle_area_code", "fetched_at"}),
+		}).CreateInBatches(&rows, asyncUpsertBatchSize).Error
+	})
 }
 
 // ExistsUser はuserの存在確認を行います。

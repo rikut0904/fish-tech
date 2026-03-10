@@ -25,6 +25,14 @@ type Client struct {
 	httpClient *http.Client
 }
 
+// SmallArea はHotPepperのsmall_area情報です。
+type SmallArea struct {
+	Code          string
+	Name          string
+	MiddleArea    string
+	LargeAreaCode string
+}
+
 // NewClientFromEnv は環境変数からHotPepperクライアントを作成します。
 func NewClientFromEnv() *Client {
 	return &Client{
@@ -143,23 +151,46 @@ func (c *Client) IsValidSmallAreaCode(ctx context.Context, largeAreaCode string,
 		return false, nil
 	}
 
-	middleAreas, err := c.fetchMiddleAreaCodesByLargeArea(ctx, trimmedLargeAreaCode)
+	smallAreas, err := c.FetchSmallAreasByLargeArea(ctx, trimmedLargeAreaCode)
 	if err != nil {
 		return false, err
 	}
-	for _, middleAreaCode := range middleAreas {
-		smallAreas, fetchErr := c.fetchSmallAreaCodesByMiddleArea(ctx, middleAreaCode)
-		if fetchErr != nil {
-			return false, fetchErr
-		}
-		for _, code := range smallAreas {
-			if strings.EqualFold(strings.TrimSpace(code), trimmedSmallAreaCode) {
-				return true, nil
-			}
+
+	for _, area := range smallAreas {
+		if strings.EqualFold(strings.TrimSpace(area.Code), trimmedSmallAreaCode) {
+			return true, nil
 		}
 	}
 
 	return false, nil
+}
+
+// FetchSmallAreasByLargeArea はlarge_area配下のsmall_area一覧を返します。
+func (c *Client) FetchSmallAreasByLargeArea(ctx context.Context, largeAreaCode string) ([]SmallArea, error) {
+	if c.apiKey == "" {
+		return nil, fmt.Errorf("HOTPEPPER_API_KEY が設定されていません")
+	}
+
+	trimmedLargeAreaCode := strings.TrimSpace(largeAreaCode)
+	if trimmedLargeAreaCode == "" {
+		return nil, nil
+	}
+
+	middleAreas, err := c.fetchMiddleAreaCodesByLargeArea(ctx, trimmedLargeAreaCode)
+	if err != nil {
+		return nil, err
+	}
+
+	results := make([]SmallArea, 0, 64)
+	for _, middleAreaCode := range middleAreas {
+		smallAreas, fetchErr := c.fetchSmallAreaCodesByMiddleArea(ctx, trimmedLargeAreaCode, middleAreaCode)
+		if fetchErr != nil {
+			return nil, fetchErr
+		}
+		results = append(results, smallAreas...)
+	}
+
+	return results, nil
 }
 
 func (c *Client) fetchMiddleAreaCodesByLargeArea(ctx context.Context, largeAreaCode string) ([]string, error) {
@@ -216,7 +247,7 @@ func (c *Client) fetchMiddleAreaCodesByLargeArea(ctx context.Context, largeAreaC
 	return codes, nil
 }
 
-func (c *Client) fetchSmallAreaCodesByMiddleArea(ctx context.Context, middleAreaCode string) ([]string, error) {
+func (c *Client) fetchSmallAreaCodesByMiddleArea(ctx context.Context, largeAreaCode string, middleAreaCode string) ([]SmallArea, error) {
 	values := url.Values{}
 	values.Set("key", c.apiKey)
 	values.Set("format", "json")
@@ -249,6 +280,7 @@ func (c *Client) fetchSmallAreaCodesByMiddleArea(ctx context.Context, middleArea
 			} `json:"error"`
 			SmallArea []struct {
 				Code string `json:"code"`
+				Name string `json:"name"`
 			} `json:"small_area"`
 		} `json:"results"`
 	}
@@ -259,11 +291,16 @@ func (c *Client) fetchSmallAreaCodesByMiddleArea(ctx context.Context, middleArea
 		return nil, fmt.Errorf("HotPepper APIエラー: %s", payload.Results.Error[0].Message)
 	}
 
-	codes := make([]string, 0, len(payload.Results.SmallArea))
+	codes := make([]SmallArea, 0, len(payload.Results.SmallArea))
 	for _, area := range payload.Results.SmallArea {
-		trimmed := strings.TrimSpace(area.Code)
-		if trimmed != "" {
-			codes = append(codes, trimmed)
+		code := strings.TrimSpace(area.Code)
+		if code != "" {
+			codes = append(codes, SmallArea{
+				Code:          code,
+				Name:          strings.TrimSpace(area.Name),
+				MiddleArea:    strings.TrimSpace(middleAreaCode),
+				LargeAreaCode: strings.TrimSpace(largeAreaCode),
+			})
 		}
 	}
 
