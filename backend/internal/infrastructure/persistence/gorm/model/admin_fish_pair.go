@@ -5,8 +5,8 @@ import "time"
 // AdminFishPair は管理画面の魚相性情報を保存するGORMモデルです。
 type AdminFishPair struct {
 	ID        string    `gorm:"column:id;type:uuid;primaryKey"`
-	FishIDa   string    `gorm:"column:fish_id_a;type:uuid;not null;index;uniqueIndex:idx_admin_fish_pair_unique"`
-	FishIDb   string    `gorm:"column:fish_id_b;type:uuid;not null;index;uniqueIndex:idx_admin_fish_pair_unique"`
+	FishIDa   string    `gorm:"column:fish_id_a;type:uuid;not null;index"`
+	FishIDb   string    `gorm:"column:fish_id_b;type:uuid;not null;index"`
 	Score     int       `gorm:"column:score;not null"`
 	Memo      string    `gorm:"column:memo"`
 	CreatedAt time.Time `gorm:"column:created_at;not null"`

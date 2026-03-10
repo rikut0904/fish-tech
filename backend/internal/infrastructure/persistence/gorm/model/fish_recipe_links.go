@@ -4,8 +4,8 @@ import "time"
 
 // FishRecipeLinks は fish_recipe_links テーブルのGORMモデルです。
 type FishRecipeLinks struct {
-FishID    string     "gorm:\"column:fish_id;type:uuid;primaryKey\""
-	RecipeID  string     "gorm:\"column:recipe_id;type:uuid;primaryKey\""
+	FishID    string     `gorm:"column:fish_id;type:uuid;primaryKey"`
+	RecipeID  string     `gorm:"column:recipe_id;type:text;primaryKey"`
 	Score     *int       `gorm:"column:score"`
 	Explain   string     `gorm:"column:explain"`
 	CreatedAt time.Time  `gorm:"column:created_at;not null"`
