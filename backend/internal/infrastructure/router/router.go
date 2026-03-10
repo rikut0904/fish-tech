@@ -5,12 +5,14 @@ import (
 	"os"
 
 	"fish-tech/internal/infrastructure/googlephotos"
+	"fish-tech/internal/infrastructure/hotpepper"
 	"fish-tech/internal/infrastructure/persistence/gorm"
 	"fish-tech/internal/infrastructure/persistence/gorm/repository"
 	"fish-tech/internal/interface/handler"
 	adminHandler "fish-tech/internal/interface/handler/admin"
 	"fish-tech/internal/usecase/admin"
 	"fish-tech/internal/usecase/hello"
+	placeUseCasePkg "fish-tech/internal/usecase/place"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -34,6 +36,9 @@ func NewRouter() (*echo.Echo, error) {
 	if err != nil {
 		return nil, fmt.Errorf("DB初期化に失敗しました: %w", err)
 	}
+	if err := gorm.AutoMigrateAll(db); err != nil {
+		return nil, fmt.Errorf("DBマイグレーションに失敗しました: %w", err)
+	}
 
 	// ユースケースの初期化
 	helloUseCase := hello.NewHelloUseCase()
@@ -42,10 +47,17 @@ func NewRouter() (*echo.Echo, error) {
 		return nil, fmt.Errorf("管理画面用テーブル初期化に失敗しました: %w", err)
 	}
 	adminUseCase := admin.NewAdminUseCase(adminRepository)
+	hotpepperClient := hotpepper.NewClientFromEnv()
+	placeRepository, err := repository.NewPlaceRepository(db, hotpepperClient)
+	if err != nil {
+		return nil, fmt.Errorf("店舗キャッシュテーブル初期化に失敗しました: %w", err)
+	}
+	placeUseCase := placeUseCasePkg.NewPlaceUseCase(placeRepository)
 
 	// ハンドラーの初期化
 	helloHandler := handler.NewHelloHandler(helloUseCase)
 	publicFishHandler := handler.NewPublicFishHandler(adminUseCase)
+	placeHandler := handler.NewPlaceHandler(placeUseCase)
 	photosClient := googlephotos.NewClientFromEnv()
 	adminHTTPHandler := adminHandler.NewAdminHandler(adminUseCase, photosClient)
 	allowedAdminOrigins := parseAllowedOrigins(os.Getenv("ADMIN_ALLOWED_ORIGINS"), defaultAdminOrigin)
@@ -56,6 +68,8 @@ func NewRouter() (*echo.Echo, error) {
 		api.GET("/hello", helloHandler.GetHello)
 		api.GET("/fishes", publicFishHandler.ListFishes)
 		api.GET("/pairs", publicFishHandler.ListPairs)
+		api.GET("/places/recommendations", placeHandler.GetRecommendedPlaces)
+		api.PATCH("/places/favorite", placeHandler.UpdatePlaceFavorite)
 
 		adminGroup := api.Group("/admin")
 		adminGroup.Use(RequireAdminOrigin(allowedAdminOrigins))
