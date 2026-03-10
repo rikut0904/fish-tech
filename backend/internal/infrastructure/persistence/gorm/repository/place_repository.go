@@ -71,7 +71,7 @@ func (r *PlaceRepository) SearchRecommendedPlaces(ctx context.Context, condition
 			}
 			r.persistFetchedPlacesAsync(fetched, fishID, now)
 			if condition.Favorite {
-				return cached, nil
+				return r.filterFavoritePlaces(ctx, condition.UserID, fetched)
 			}
 			return fetched, nil
 		}
@@ -95,10 +95,53 @@ func (r *PlaceRepository) SearchRecommendedPlaces(ctx context.Context, condition
 	}
 	r.persistFetchedPlacesAsync(fetched, "", now)
 	if condition.Favorite {
-		return cached, nil
+		return r.filterFavoritePlaces(ctx, condition.UserID, fetched)
 	}
 
 	return fetched, nil
+}
+
+func (r *PlaceRepository) filterFavoritePlaces(ctx context.Context, userID string, places []placeDomain.RecommendedPlace) ([]placeDomain.RecommendedPlace, error) {
+	if len(places) == 0 {
+		return []placeDomain.RecommendedPlace{}, nil
+	}
+
+	placeIDs := make([]string, 0, len(places))
+	for _, place := range places {
+		trimmedID := strings.TrimSpace(place.ID)
+		if trimmedID != "" {
+			placeIDs = append(placeIDs, trimmedID)
+		}
+	}
+	if len(placeIDs) == 0 {
+		return []placeDomain.RecommendedPlace{}, nil
+	}
+
+	var favoriteIDs []string
+	if err := r.db.WithContext(ctx).
+		Table("user_place_links").
+		Select("place_id").
+		Where("user_id = ? AND is_likes = TRUE AND place_id IN ?", strings.TrimSpace(userID), placeIDs).
+		Find(&favoriteIDs).Error; err != nil {
+		return nil, err
+	}
+	if len(favoriteIDs) == 0 {
+		return []placeDomain.RecommendedPlace{}, nil
+	}
+
+	favoriteSet := make(map[string]struct{}, len(favoriteIDs))
+	for _, id := range favoriteIDs {
+		favoriteSet[id] = struct{}{}
+	}
+
+	filtered := make([]placeDomain.RecommendedPlace, 0, len(places))
+	for _, place := range places {
+		if _, ok := favoriteSet[place.ID]; ok {
+			filtered = append(filtered, place)
+		}
+	}
+
+	return filtered, nil
 }
 
 func (r *PlaceRepository) findFishIDByName(ctx context.Context, fishName string) (string, bool, error) {
