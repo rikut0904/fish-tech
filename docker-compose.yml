@@ -9,6 +9,19 @@ services:
       - NODE_ENV=production
     depends_on:
       - backend
+      - admin
+
+  admin:
+    build:
+      context: ./admin
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+    depends_on:
+      - backend
 
   backend:
     build:
