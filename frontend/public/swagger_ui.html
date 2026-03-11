@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fish-Tech Swagger UI</title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css"
+    />
+    <style>
+      body {
+        margin: 0;
+        background: #ffffff;
+      }
+
+      #swagger-ui {
+        min-height: 100vh;
+      }
+
+      .error-message {
+        margin: 24px;
+        padding: 16px;
+        border: 1px solid #fecaca;
+        border-radius: 12px;
+        background: #fef2f2;
+        color: #991b1b;
+        font-family: sans-serif;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="swagger-ui"></div>
+    <script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
+    <script>
+      function renderError(message) {
+        var container = document.getElementById("swagger-ui");
+        if (!container) {
+          return;
+        }
+
+        container.innerHTML =
+          '<div class="error-message">' + message + "</div>";
+      }
+
+      window.addEventListener("load", function () {
+        if (!window.SwaggerUIBundle) {
+          renderError("Swagger UI の読み込みに失敗しました。");
+          return;
+        }
+
+        try {
+          window.SwaggerUIBundle({
+            dom_id: "#swagger-ui",
+            url: window.location.origin + "/openapi.json",
+            deepLinking: true,
+            layout: "BaseLayout",
+          });
+        } catch (error) {
+          console.error(error);
+          renderError("Swagger UI の初期化に失敗しました。");
+        }
+      });
+    </script>
+  </body>
+</html>
