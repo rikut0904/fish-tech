@@ -1,4 +1,10 @@
 export default function SwaggerUi() {
+  const apiBaseUrl =
+    process.env.NEXT_PUBLIC_SWAGGER_API_BASE_URL ??
+    process.env.NEXT_PUBLIC_API_BASE_URL ??
+    "http://localhost:8080/api";
+  const iframeSrc = `/swagger_ui.html?apiBaseUrl=${encodeURIComponent(apiBaseUrl)}`;
+
   return (
     <div className="min-h-screen bg-slate-100 px-4 py-8 text-slate-900">
       <div className="mx-auto max-w-6xl rounded-3xl bg-white p-4 shadow-sm md:p-6">
@@ -10,7 +16,7 @@ export default function SwaggerUi() {
         </div>
         <iframe
           title="Fish-Tech Swagger UI"
-          src="/swagger_ui.html"
+          src={iframeSrc}
           className="h-[80vh] w-full rounded-2xl border border-slate-200 bg-white"
         />
       </div>

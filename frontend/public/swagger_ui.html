@@ -33,6 +33,23 @@
     <div id="swagger-ui"></div>
     <script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
     <script>
+      function parseApiBaseUrl() {
+        var params = new URLSearchParams(window.location.search);
+        return params.get("apiBaseUrl") || "http://localhost:8080/api";
+      }
+
+      function applyApiBaseUrl(spec, apiBaseUrl) {
+        try {
+          var parsed = new URL(apiBaseUrl);
+          spec.host = parsed.host;
+          spec.schemes = [parsed.protocol.replace(":", "")];
+          spec.basePath = parsed.pathname || "/";
+        } catch (error) {
+          console.error(error);
+        }
+        return spec;
+      }
+
       function renderError(message) {
         var container = document.getElementById("swagger-ui");
         if (!container) {
@@ -50,13 +67,27 @@
         }
 
         try {
-          window.SwaggerUIBundle({
-            dom_id: "#swagger-ui",
-            url: window.location.origin + "/swagger.json",
-            deepLinking: true,
-            defaultModelsExpandDepth: -1,
-            layout: "BaseLayout",
-          });
+          var apiBaseUrl = parseApiBaseUrl();
+          fetch(window.location.origin + "/swagger.json")
+            .then(function (response) {
+              if (!response.ok) {
+                throw new Error("Swagger 定義の取得に失敗しました。");
+              }
+              return response.json();
+            })
+            .then(function (spec) {
+              window.SwaggerUIBundle({
+                dom_id: "#swagger-ui",
+                spec: applyApiBaseUrl(spec, apiBaseUrl),
+                deepLinking: true,
+                defaultModelsExpandDepth: -1,
+                layout: "BaseLayout",
+              });
+            })
+            .catch(function (error) {
+              console.error(error);
+              renderError("Swagger 定義の読み込みに失敗しました。");
+            });
         } catch (error) {
           console.error(error);
           renderError("Swagger UI の初期化に失敗しました。");
