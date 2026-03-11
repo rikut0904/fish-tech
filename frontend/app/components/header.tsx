@@ -21,6 +21,9 @@ export default function Header() {
                 <Link href="/about">
                     <span className="text-blue-700 hover:underline">このサイトについて</span>
                 </Link>
+                <Link href="/privacy">
+                    <span className="text-blue-700 hover:underline">プライバシーポリシー</span>
+                </Link>
                 <Link href="/contact">
                     <span className="text-blue-700 hover:underline">お問い合わせ</span>
                 </Link>
