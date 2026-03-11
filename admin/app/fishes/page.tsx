@@ -13,6 +13,7 @@ type FishesPageState = {
   fishCategory: string;
   fishDescription: string;
   fishImageUrl: string;
+  fishImageMediaId: string;
   uploadingImage: boolean;
 };
 
@@ -24,6 +25,7 @@ const initialState: FishesPageState = {
   fishCategory: "",
   fishDescription: "",
   fishImageUrl: "",
+  fishImageMediaId: "",
   uploadingImage: false,
 };
 
@@ -58,6 +60,7 @@ export default function FishesPage() {
         category: state.fishCategory,
         description: state.fishDescription,
         imageUrl: state.fishImageUrl,
+        imageMediaId: state.fishImageMediaId,
         linkUrl: "",
       });
       patchState((prev) => ({
@@ -66,6 +69,7 @@ export default function FishesPage() {
         fishCategory: "",
         fishDescription: "",
         fishImageUrl: "",
+        fishImageMediaId: "",
       }));
     } catch (error) {
       patchState({
@@ -97,8 +101,11 @@ export default function FishesPage() {
 
     patchState({ errorMessage: "", uploadingImage: true });
     try {
-      const imageUrl = await uploadFishImage(file);
-      patchState({ fishImageUrl: imageUrl });
+      const uploaded = await uploadFishImage(file);
+      patchState({
+        fishImageUrl: uploaded.imageUrl,
+        fishImageMediaId: uploaded.imageMediaId ?? "",
+      });
     } catch (error) {
       patchState({
         errorMessage: error instanceof Error ? error.message : "画像アップロードに失敗しました",
@@ -200,7 +207,12 @@ export default function FishesPage() {
                   className="mt-3 w-full rounded-lg border border-slate-300 px-3 py-2"
                   type="url"
                   value={state.fishImageUrl}
-                  onChange={(event) => patchState({ fishImageUrl: event.target.value })}
+                  onChange={(event) =>
+                    patchState({
+                      fishImageUrl: event.target.value,
+                      fishImageMediaId: "",
+                    })
+                  }
                   placeholder="画像URLを入力"
                 />
               </div>

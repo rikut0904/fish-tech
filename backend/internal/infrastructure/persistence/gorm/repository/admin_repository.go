@@ -39,13 +39,14 @@ func (r *AdminRepository) ListFishes(ctx context.Context) ([]adminDomain.Fish, e
 		}
 
 		result = append(result, adminDomain.Fish{
-			ID:          row.ID,
-			Name:        name,
-			Category:    row.Category,
-			Description: row.Explain,
-			ImageURL:    row.ImageURL,
-			LinkURL:     row.LinkURL,
-			CreatedAt:   row.CreatedAt,
+			ID:           row.ID,
+			Name:         name,
+			Category:     row.Category,
+			Description:  row.Explain,
+			ImageURL:     row.ImageURL,
+			ImageMediaID: row.ImageMediaID,
+			LinkURL:      row.LinkURL,
+			CreatedAt:    row.CreatedAt,
 		})
 	}
 
@@ -56,15 +57,16 @@ func (r *AdminRepository) ListFishes(ctx context.Context) ([]adminDomain.Fish, e
 func (r *AdminRepository) CreateFish(ctx context.Context, fish adminDomain.Fish) (adminDomain.Fish, error) {
 	updatedAt := fish.CreatedAt
 	row := model.Fish{
-		ID:        fish.ID,
-		NameJa:    fish.Name,
-		Name:      fish.Name,
-		Category:  fish.Category,
-		Explain:   fish.Description,
-		ImageURL:  fish.ImageURL,
-		LinkURL:   fish.LinkURL,
-		CreatedAt: fish.CreatedAt,
-		UpdatedAt: &updatedAt,
+		ID:           fish.ID,
+		NameJa:       fish.Name,
+		Name:         fish.Name,
+		Category:     fish.Category,
+		Explain:      fish.Description,
+		ImageURL:     fish.ImageURL,
+		ImageMediaID: fish.ImageMediaID,
+		LinkURL:      fish.LinkURL,
+		CreatedAt:    fish.CreatedAt,
+		UpdatedAt:    &updatedAt,
 	}
 
 	if err := r.db.WithContext(ctx).Create(&row).Error; err != nil {

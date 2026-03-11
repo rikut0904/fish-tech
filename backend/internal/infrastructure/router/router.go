@@ -46,7 +46,8 @@ func NewRouter() (*echo.Echo, error) {
 	if err != nil {
 		return nil, fmt.Errorf("管理画面用テーブル初期化に失敗しました: %w", err)
 	}
-	adminUseCase := admin.NewAdminUseCase(adminRepository)
+	photosClient := googlephotos.NewClientFromEnv()
+	adminUseCase := admin.NewAdminUseCaseWithResolver(adminRepository, photosClient)
 	hotpepperClient := hotpepper.NewClientFromEnv()
 	placeRepository, err := repository.NewPlaceRepository(db, hotpepperClient)
 	if err != nil {
