@@ -35,6 +35,21 @@ export default function FishDetail1() {
                     <p>漁法：{fish.details.fishingMethod}</p>
                 </div>
 
+                <div className="flex gap-2">
+                    <Link
+                        href="/recipe?fish=1"
+                        className="flex-1 py-2 bg-blue-100 text-blue-700 rounded-lg text-sm font-bold flex items-center justify-center"
+                    >
+                        おすすめレシピを探す
+                    </Link>
+                    <Link
+                        href="/shopList"
+                        className="flex-1 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold flex items-center justify-center"
+                    >
+                        食べられる店舗を探す
+                    </Link>
+                </div>
+
                 <div className="space-y-4 pt-4 border-t">
                     <div>
                         <p className="font-bold border-l-4 border-blue-500 pl-2 mb-2">相性の良い魚</p>
