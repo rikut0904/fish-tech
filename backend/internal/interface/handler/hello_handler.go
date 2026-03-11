@@ -3,8 +3,9 @@ package handler
 import (
 	"net/http"
 
-	"github.com/labstack/echo/v4"
 	"fish-tech/internal/usecase/hello"
+
+	"github.com/labstack/echo/v4"
 )
 
 // HelloResponse は動作確認レスポンスです。

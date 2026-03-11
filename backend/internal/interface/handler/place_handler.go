@@ -30,9 +30,9 @@ type RecommendedPlaceResponse struct {
 
 // PlaceRecommendationsResponse はおすすめ店舗一覧レスポンスです。
 type PlaceRecommendationsResponse struct {
-	Page    int                      `json:"page"`
-	PerPage int                      `json:"perPage"`
-	Count   int                      `json:"count"`
+	Page    int                        `json:"page"`
+	PerPage int                        `json:"perPage"`
+	Count   int                        `json:"count"`
 	Items   []RecommendedPlaceResponse `json:"items"`
 }
 

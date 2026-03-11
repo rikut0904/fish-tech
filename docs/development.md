@@ -46,12 +46,16 @@ docker compose up --build
 ### Make コマンド
 
 ```bash
-make swagger  # backend の Swagger コメントから frontend/public/swagger.json を更新
-make format   # Swagger 定義更新 + Go/Frontend/Admin の整形
-make test     # Swagger 定義更新 + Go test + Frontend/Admin lint
+make swag     # backend の Swagger コメントから frontend/public/swagger.json を更新
+make fmt      # Swagger 定義更新 + go fix + goimports + gofmt + Frontend/Admin の整形
+make lint     # Frontend/Admin lint
+make test     # Frontend/Admin lint + Go test
 make build    # Swagger 定義更新 + docker compose build
-make run      # docker compose up --build
+make run      # docker compose up --build を実行
 ```
+
+- Swagger の `info.version` は `backend/cmd/api/main.go` の `@version` コメントを基準に更新されます。
+- `x.y` 形式で、`x` はコード側で手動管理、`make swag` 実行時に同じ `x` の範囲で `y` が自動インクリメントされます。
 
 ### 個別起動
 
