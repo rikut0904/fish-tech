@@ -41,9 +41,14 @@ export default function FishApp() {
         return (
             <div className="min-h-screen bg-white">
                 <header className="p-4 flex items-center border-b">
-                    <button onClick={() => setView('list')}><ChevronLeft /></button>
+                    <button onClick={() => setView('list')}>
+                        <ChevronLeft />
+                    </button>
                     <div className="flex-1 text-center font-bold">
-                        <span className="text-red-500 mr-2">●</span>{selectedFish.name} / {selectedFish.scientificName}
+                        <span className="text-red-500 mr-2">
+                            ●
+                        </span>
+                        {selectedFish.name} / {selectedFish.scientificName}
                     </div>
                 </header>
                 <main className="p-4 max-w-md mx-auto space-y-4">
@@ -61,7 +66,9 @@ export default function FishApp() {
                     </div>
 
                     <div className="flex gap-2">
-                        <button className="flex-1 py-2 bg-blue-100 text-blue-700 rounded-lg text-sm font-bold">おすすめレシピを探す</button>
+                        <button className="flex-1 py-2 bg-blue-100 text-blue-700 rounded-lg text-sm font-bold">
+                            おすすめレシピを探す
+                        </button>
                         <button
                             onClick={() => setView('shopList')}
                             className="flex-1 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold"
@@ -93,7 +100,9 @@ export default function FishApp() {
     if (view === 'shopList') {
         return (
             <div className="min-h-screen bg-gray-50">
-                <header className="bg-blue-600 text-white p-6 text-center text-xl font-bold">ヘッダー (別メンバー作成分)</header>
+                <header className="bg-blue-600 text-white p-6 text-center text-xl font-bold">
+                    ヘッダー (別メンバー作成分)
+                </header>
                 <div className="p-4 max-w-md mx-auto space-y-4">
                     <button onClick={() => setView('detail')} className="text-sm text-gray-500 flex items-center gap-1">
                         <ChevronLeft size={16} /> 店舗検索
