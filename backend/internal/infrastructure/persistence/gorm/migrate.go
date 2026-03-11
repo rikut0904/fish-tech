@@ -28,8 +28,6 @@ func AutoMigrateAll(db *gorm.DB) error {
 		&model.UserPlaceLinks{},
 		&model.UserRecipeLinks{},
 		&model.HotpepperSmallAreaCache{},
-		&model.AdminFish{},
-		&model.AdminFishPair{},
 	); err != nil {
 		return err
 	}
@@ -158,12 +156,6 @@ func migrateFishPairIndexes(db *gorm.DB) error {
 	if db.Migrator().HasTable(&model.FishPair{}) {
 		if err := db.Exec(`CREATE UNIQUE INDEX IF NOT EXISTS uq_fish_pair_ids ON fish_pair (fish_a_id, fish_b_id)`).Error; err != nil {
 			return fmt.Errorf("fish_pair 複合ユニークインデックス作成に失敗しました: %w", err)
-		}
-	}
-
-	if db.Migrator().HasTable(&model.AdminFishPair{}) {
-		if err := db.Exec(`CREATE UNIQUE INDEX IF NOT EXISTS uq_admin_fish_pair_ids ON admin_fish_pairs (fish_id_a, fish_id_b)`).Error; err != nil {
-			return fmt.Errorf("admin_fish_pairs 複合ユニークインデックス作成に失敗しました: %w", err)
 		}
 	}
 

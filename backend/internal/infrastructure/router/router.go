@@ -59,7 +59,6 @@ func NewRouter() (*echo.Echo, error) {
 	helloHandler := handler.NewHelloHandler(helloUseCase)
 	publicFishHandler := handler.NewPublicFishHandler(adminUseCase)
 	placeHandler := handler.NewPlaceHandler(placeUseCase)
-	photosClient := googlephotos.NewClientFromEnv()
 	adminHTTPHandler := adminHandler.NewAdminHandler(adminUseCase, photosClient)
 	allowedAdminOrigins := parseAllowedOrigins(os.Getenv("ADMIN_ALLOWED_ORIGINS"), defaultAdminOrigin)
 
