@@ -1,7 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { ChevronLeft, MapPin, ExternalLink } from 'lucide-react';
-import { allFishData } from '../data';
+import { allFishData } from '../../data';
 
 export default function FishDetailPage({ params }: { params: { id: string } }) {
     const id = Number(params.id);
