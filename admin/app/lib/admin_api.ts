@@ -73,15 +73,18 @@ export async function createFish(input: {
   category: string;
   description: string;
   imageUrl: string;
+  imageMediaId?: string;
   linkUrl: string;
 }): Promise<Fish> {
-  const params = new URLSearchParams({
-    name: input.name,
-    category: input.category,
-    description: input.description,
-    imageUrl: input.imageUrl,
-    linkUrl: input.linkUrl,
-  });
+  const params = new URLSearchParams();
+  params.set("name", input.name);
+  params.set("category", input.category);
+  params.set("description", input.description);
+  params.set("imageUrl", input.imageUrl);
+  params.set("linkUrl", input.linkUrl);
+  if (input.imageMediaId) {
+    params.set("imageMediaId", input.imageMediaId);
+  }
 
   const response = await fetchApi(`${API_BASE_URL}/admin/fishes?${params.toString()}`, {
     method: "POST",
@@ -93,7 +96,10 @@ export async function createFish(input: {
   return (await response.json()) as Fish;
 }
 
-export async function uploadFishImage(file: File): Promise<string> {
+export async function uploadFishImage(file: File): Promise<{
+  imageUrl: string;
+  imageMediaId?: string;
+}> {
   const formData = new FormData();
   formData.append("file", file);
 
@@ -105,8 +111,7 @@ export async function uploadFishImage(file: File): Promise<string> {
     throw new Error(await parseErrorMessage(response));
   }
 
-  const data = (await response.json()) as { imageUrl: string };
-  return data.imageUrl;
+  return (await response.json()) as { imageUrl: string; imageMediaId?: string };
 }
 
 export async function deleteFish(id: string): Promise<void> {

@@ -48,33 +48,55 @@ func (c *Client) Enabled() bool {
 }
 
 // Upload は画像をGoogle Photosへアップロードし、閲覧URLを返します。
-func (c *Client) Upload(ctx context.Context, filename string, data []byte) (string, error) {
+func (c *Client) Upload(ctx context.Context, filename string, data []byte) (string, string, error) {
+	if !c.Enabled() {
+		return "", "", fmt.Errorf("Google Photos設定が不足しています")
+	}
+	if len(data) == 0 {
+		return "", "", fmt.Errorf("画像データが空です")
+	}
+
+	accessToken, err := c.fetchAccessToken(ctx)
+	if err != nil {
+		return "", "", err
+	}
+
+	uploadToken, err := c.uploadRawBytes(ctx, accessToken, filename, data)
+	if err != nil {
+		return "", "", err
+	}
+
+	imageURL, imageMediaID, err := c.createMediaItem(ctx, accessToken, uploadToken, filename, c.targetAlbumID)
+	if err == nil {
+		return imageURL, imageMediaID, nil
+	}
+	if c.targetAlbumID != "" && isInvalidAlbumIDError(err) {
+		return c.createMediaItem(ctx, accessToken, uploadToken, filename, "")
+	}
+
+	return "", "", err
+}
+
+// ResolveMediaItemURL はmediaItemIDから表示用画像URLを再解決します。
+func (c *Client) ResolveMediaItemURL(ctx context.Context, mediaItemID string) (string, error) {
 	if !c.Enabled() {
 		return "", fmt.Errorf("Google Photos設定が不足しています")
 	}
-	if len(data) == 0 {
-		return "", fmt.Errorf("画像データが空です")
+	trimmedID := strings.TrimSpace(mediaItemID)
+	if trimmedID == "" {
+		return "", fmt.Errorf("mediaItemIDが空です")
 	}
 
 	accessToken, err := c.fetchAccessToken(ctx)
 	if err != nil {
 		return "", err
 	}
-
-	uploadToken, err := c.uploadRawBytes(ctx, accessToken, filename, data)
+	baseURL, err := c.fetchMediaItemBaseURL(ctx, accessToken, trimmedID)
 	if err != nil {
 		return "", err
 	}
 
-	imageURL, err := c.createMediaItem(ctx, accessToken, uploadToken, filename, c.targetAlbumID)
-	if err == nil {
-		return imageURL, nil
-	}
-	if c.targetAlbumID != "" && isInvalidAlbumIDError(err) {
-		return c.createMediaItem(ctx, accessToken, uploadToken, filename, "")
-	}
-
-	return "", err
+	return withImageSize(baseURL), nil
 }
 
 func isInvalidAlbumIDError(err error) bool {
@@ -153,7 +175,7 @@ func (c *Client) uploadRawBytes(ctx context.Context, accessToken string, filenam
 	return uploadToken, nil
 }
 
-func (c *Client) createMediaItem(ctx context.Context, accessToken string, uploadToken string, filename string, albumID string) (string, error) {
+func (c *Client) createMediaItem(ctx context.Context, accessToken string, uploadToken string, filename string, albumID string) (string, string, error) {
 	requestBody := map[string]any{
 		"newMediaItems": []map[string]any{
 			{
@@ -171,28 +193,28 @@ func (c *Client) createMediaItem(ctx context.Context, accessToken string, upload
 
 	payload, err := json.Marshal(requestBody)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, batchCreateEndpoint, bytes.NewReader(payload))
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	req.Header.Set("Authorization", "Bearer "+accessToken)
 	req.Header.Set("Content-Type", "application/json")
 
 	res, err := c.httpClient.Do(req)
 	if err != nil {
-		return "", fmt.Errorf("mediaItems作成に失敗しました: %w", err)
+		return "", "", fmt.Errorf("mediaItems作成に失敗しました: %w", err)
 	}
 	defer res.Body.Close()
 
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	if res.StatusCode < 200 || res.StatusCode >= 300 {
-		return "", fmt.Errorf("mediaItems作成エラー: %s", string(body))
+		return "", "", fmt.Errorf("mediaItems作成エラー: %s", string(body))
 	}
 
 	var response struct {
@@ -209,31 +231,31 @@ func (c *Client) createMediaItem(ctx context.Context, accessToken string, upload
 		} `json:"newMediaItemResults"`
 	}
 	if err := json.Unmarshal(body, &response); err != nil {
-		return "", err
+		return "", "", err
 	}
 	if len(response.NewMediaItemResults) == 0 {
-		return "", fmt.Errorf("mediaItems結果が空です")
+		return "", "", fmt.Errorf("mediaItems結果が空です")
 	}
 
 	item := response.NewMediaItemResults[0]
 	if item.Status.Code != 0 {
-		return "", fmt.Errorf("Google Photos保存エラー: %s", item.Status.Message)
+		return "", "", fmt.Errorf("Google Photos保存エラー: %s", item.Status.Message)
 	}
 	if item.MediaItem.BaseURL != "" {
-		return withImageSize(item.MediaItem.BaseURL), nil
+		return withImageSize(item.MediaItem.BaseURL), item.MediaItem.ID, nil
 	}
 	if item.MediaItem.ID != "" {
 		baseURL, err := c.fetchMediaItemBaseURL(ctx, accessToken, item.MediaItem.ID)
 		if err != nil {
-			return "", err
+			return "", "", err
 		}
-		return withImageSize(baseURL), nil
+		return withImageSize(baseURL), item.MediaItem.ID, nil
 	}
 	if item.MediaItem.ProductURL != "" {
-		return "", fmt.Errorf("画像表示用URLが取得できませんでした。OAuthスコープに photoslibrary.readonly.appcreateddata を追加してください")
+		return "", "", fmt.Errorf("画像表示用URLが取得できませんでした。OAuthスコープに photoslibrary.readonly.appcreateddata を追加してください")
 	}
 
-	return "", fmt.Errorf("Google Photos URLが取得できませんでした")
+	return "", "", fmt.Errorf("Google Photos URLが取得できませんでした")
 }
 
 func (c *Client) fetchMediaItemBaseURL(ctx context.Context, accessToken string, mediaItemID string) (string, error) {
