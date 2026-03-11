@@ -90,7 +90,8 @@ http://localhost:8080/api
 
 ```json
 {
-  "imageUrl": "https://photos.google.com/..."
+  "imageUrl": "https://lh3.googleusercontent.com/...",
+  "imageMediaId": "ANX7n..."
 }
 ```
 
@@ -102,10 +103,10 @@ http://localhost:8080/api
 
 - クエリパラメータを指定
 - 必須: `name`, `category`
-- 任意: `description`, `imageUrl`, `linkUrl`
+- 任意: `description`, `imageUrl`, `imageMediaId`, `linkUrl`
 
 ```text
-POST /api/admin/fishes?name=ヒラメ&category=白身魚&description=淡白で上品な味わい&imageUrl=https%3A%2F%2Fphotos.google.com%2F...&linkUrl=https%3A%2F%2Fexample.com%2Ffish%2Fhirame
+POST /api/admin/fishes?name=ヒラメ&category=白身魚&description=淡白で上品な味わい&imageUrl=https%3A%2F%2Flh3.googleusercontent.com%2F...&imageMediaId=ANX7n...&linkUrl=https%3A%2F%2Fexample.com%2Ffish%2Fhirame
 ```
 
 **レスポンス**

@@ -41,12 +41,12 @@ func NewRouter() (*echo.Echo, error) {
 	if err != nil {
 		return nil, fmt.Errorf("管理画面用テーブル初期化に失敗しました: %w", err)
 	}
-	adminUseCase := admin.NewAdminUseCase(adminRepository)
+	photosClient := googlephotos.NewClientFromEnv()
+	adminUseCase := admin.NewAdminUseCaseWithResolver(adminRepository, photosClient)
 
 	// ハンドラーの初期化
 	helloHandler := handler.NewHelloHandler(helloUseCase)
 	publicFishHandler := handler.NewPublicFishHandler(adminUseCase)
-	photosClient := googlephotos.NewClientFromEnv()
 	adminHTTPHandler := adminHandler.NewAdminHandler(adminUseCase, photosClient)
 	allowedAdminOrigins := parseAllowedOrigins(os.Getenv("ADMIN_ALLOWED_ORIGINS"), defaultAdminOrigin)
 

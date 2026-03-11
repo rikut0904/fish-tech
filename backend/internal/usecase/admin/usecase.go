@@ -39,10 +39,15 @@ type Repository interface {
 	ExistsPair(ctx context.Context, fishIDa string, fishIDb string) (bool, error)
 }
 
+// MediaURLResolver は画像URL解決機能のインターフェースです。
+type MediaURLResolver interface {
+	ResolveMediaItemURL(ctx context.Context, mediaItemID string) (string, error)
+}
+
 // UseCase は管理画面向けユースケースのインターフェースです。
 type UseCase interface {
 	ListFishes(ctx context.Context) ([]adminDomain.Fish, error)
-	CreateFish(ctx context.Context, name string, category string, description string, imageURL string, linkURL string) (adminDomain.Fish, error)
+	CreateFish(ctx context.Context, name string, category string, description string, imageURL string, imageMediaID string, linkURL string) (adminDomain.Fish, error)
 	DeleteFish(ctx context.Context, id string) error
 	ListPairs(ctx context.Context) ([]adminDomain.FishPair, error)
 	CreatePair(ctx context.Context, fishIDa string, fishIDb string, score int, memo string) (adminDomain.FishPair, error)
@@ -50,21 +55,47 @@ type UseCase interface {
 }
 
 type adminUseCase struct {
-	repo Repository
+	repo     Repository
+	resolver MediaURLResolver
 }
 
 // NewAdminUseCase は管理画面向けユースケースを作成します。
 func NewAdminUseCase(repo Repository) UseCase {
-	return &adminUseCase{repo: repo}
+	return NewAdminUseCaseWithResolver(repo, nil)
+}
+
+// NewAdminUseCaseWithResolver は画像URL解決機能付きの管理画面向けユースケースを作成します。
+func NewAdminUseCaseWithResolver(repo Repository, resolver MediaURLResolver) UseCase {
+	return &adminUseCase{repo: repo, resolver: resolver}
 }
 
 // ListFishes は魚一覧を返します。
 func (u *adminUseCase) ListFishes(ctx context.Context) ([]adminDomain.Fish, error) {
-	return u.repo.ListFishes(ctx)
+	fishes, err := u.repo.ListFishes(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if u.resolver == nil {
+		return fishes, nil
+	}
+
+	for i := range fishes {
+		if fishes[i].ImageMediaID == "" {
+			continue
+		}
+		resolvedURL, resolveErr := u.resolver.ResolveMediaItemURL(ctx, fishes[i].ImageMediaID)
+		if resolveErr != nil {
+			continue
+		}
+		fishes[i].ImageURL = resolvedURL
+	}
+
+	return fishes, nil
 }
 
 // CreateFish は魚を追加します。
-func (u *adminUseCase) CreateFish(ctx context.Context, name string, category string, description string, imageURL string, linkURL string) (adminDomain.Fish, error) {
+func (u *adminUseCase) CreateFish(ctx context.Context, name string, category string, description string, imageURL string, imageMediaID string, linkURL string) (adminDomain.Fish, error) {
 	trimmedName := strings.TrimSpace(name)
 	if trimmedName == "" {
 		return adminDomain.Fish{}, ErrInvalidFishName
@@ -75,13 +106,14 @@ func (u *adminUseCase) CreateFish(ctx context.Context, name string, category str
 	}
 
 	fish := adminDomain.Fish{
-		ID:          uuid.NewString(),
-		Name:        trimmedName,
-		Category:    trimmedCategory,
-		Description: strings.TrimSpace(description),
-		ImageURL:    strings.TrimSpace(imageURL),
-		LinkURL:     strings.TrimSpace(linkURL),
-		CreatedAt:   time.Now(),
+		ID:           uuid.NewString(),
+		Name:         trimmedName,
+		Category:     trimmedCategory,
+		Description:  strings.TrimSpace(description),
+		ImageURL:     strings.TrimSpace(imageURL),
+		ImageMediaID: strings.TrimSpace(imageMediaID),
+		LinkURL:      strings.TrimSpace(linkURL),
+		CreatedAt:    time.Now(),
 	}
 
 	return u.repo.CreateFish(ctx, fish)

@@ -22,7 +22,7 @@ type AdminHandler struct {
 // ImageUploader は画像アップロード機能を表すインターフェースです。
 type ImageUploader interface {
 	Enabled() bool
-	Upload(ctx context.Context, filename string, data []byte) (string, error)
+	Upload(ctx context.Context, filename string, data []byte) (string, string, error)
 }
 
 // NewAdminHandler は新しい管理画面ハンドラーを作成します。
@@ -31,12 +31,13 @@ func NewAdminHandler(useCase adminUseCase.UseCase, uploader ImageUploader) *Admi
 }
 
 type fishResponse struct {
-	ID          string `json:"id"`
-	Name        string `json:"name"`
-	Category    string `json:"category"`
-	Description string `json:"description"`
-	ImageURL    string `json:"imageUrl"`
-	LinkURL     string `json:"linkUrl"`
+	ID           string `json:"id"`
+	Name         string `json:"name"`
+	Category     string `json:"category"`
+	Description  string `json:"description"`
+	ImageURL     string `json:"imageUrl"`
+	ImageMediaID string `json:"imageMediaId,omitempty"`
+	LinkURL      string `json:"linkUrl"`
 }
 
 type pairResponse struct {
@@ -48,7 +49,8 @@ type pairResponse struct {
 }
 
 type uploadImageResponse struct {
-	ImageURL string `json:"imageUrl"`
+	ImageURL     string `json:"imageUrl"`
+	ImageMediaID string `json:"imageMediaId,omitempty"`
 }
 
 // CreateFish は魚を登録します。
@@ -59,6 +61,7 @@ func (h *AdminHandler) CreateFish(c echo.Context) error {
 		c.QueryParam("category"),
 		c.QueryParam("description"),
 		c.QueryParam("imageUrl"),
+		c.QueryParam("imageMediaId"),
 		c.QueryParam("linkUrl"),
 	)
 	if err != nil {
@@ -69,12 +72,13 @@ func (h *AdminHandler) CreateFish(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusCreated, fishResponse{
-		ID:          fish.ID,
-		Name:        fish.Name,
-		Category:    fish.Category,
-		Description: fish.Description,
-		ImageURL:    fish.ImageURL,
-		LinkURL:     fish.LinkURL,
+		ID:           fish.ID,
+		Name:         fish.Name,
+		Category:     fish.Category,
+		Description:  fish.Description,
+		ImageURL:     fish.ImageURL,
+		ImageMediaID: fish.ImageMediaID,
+		LinkURL:      fish.LinkURL,
 	})
 }
 
@@ -108,12 +112,15 @@ func (h *AdminHandler) UploadFishImage(c echo.Context) error {
 		name = "upload.jpg"
 	}
 
-	imageURL, err := h.uploader.Upload(c.Request().Context(), name, data)
+	imageURL, imageMediaID, err := h.uploader.Upload(c.Request().Context(), name, data)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
-	return c.JSON(http.StatusCreated, uploadImageResponse{ImageURL: imageURL})
+	return c.JSON(http.StatusCreated, uploadImageResponse{
+		ImageURL:     imageURL,
+		ImageMediaID: imageMediaID,
+	})
 }
 
 // DeleteFish は魚を削除します。
