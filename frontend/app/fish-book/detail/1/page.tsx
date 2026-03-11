@@ -37,14 +37,14 @@ export default function FishDetail1() {
 
                 <div className="flex gap-2">
                     <Link
-                        href="/recipe?fish=1"
-                        className="flex-1 py-2 bg-blue-100 text-blue-700 rounded-lg text-sm font-bold flex items-center justify-center"
+                        href="/recipe/sample"
+                        className="flex-1 py-2 bg-blue-100 text-blue-700 rounded-lg text-sm font-bold flex items-center justify-center filter"
                     >
                         おすすめレシピを探す
                     </Link>
                     <Link
                         href="/shopList"
-                        className="flex-1 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold flex items-center justify-center"
+                        className="flex-1 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold flex items-center justify-center grayscale opacity-50 cursor-not-allowed"
                     >
                         食べられる店舗を探す
                     </Link>
