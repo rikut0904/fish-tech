@@ -5,11 +5,11 @@ import (
 	"errors"
 	"sort"
 	"strings"
-	"time"
 
 	"github.com/google/uuid"
 
 	adminDomain "fish-tech/internal/domain/admin"
+	"fish-tech/internal/shared/timeutil"
 )
 
 var (
@@ -113,7 +113,7 @@ func (u *adminUseCase) CreateFish(ctx context.Context, name string, category str
 		ImageURL:     strings.TrimSpace(imageURL),
 		ImageMediaID: strings.TrimSpace(imageMediaID),
 		LinkURL:      strings.TrimSpace(linkURL),
-		CreatedAt:    time.Now(),
+		CreatedAt:    timeutil.NowJST(),
 	}
 
 	return u.repo.CreateFish(ctx, fish)
@@ -173,7 +173,7 @@ func (u *adminUseCase) CreatePair(ctx context.Context, fishIDa string, fishIDb s
 		FishIDb:   normalizedB,
 		Score:     score,
 		Memo:      strings.TrimSpace(memo),
-		CreatedAt: time.Now(),
+		CreatedAt: timeutil.NowJST(),
 	}
 
 	return u.repo.CreatePair(ctx, pair)
