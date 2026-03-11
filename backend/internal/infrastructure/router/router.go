@@ -3,6 +3,8 @@ package router
 import (
 	"fmt"
 	"os"
+	"strconv"
+	"strings"
 
 	"fish-tech/internal/infrastructure/googlephotos"
 	"fish-tech/internal/infrastructure/hotpepper"
@@ -36,8 +38,10 @@ func NewRouter() (*echo.Echo, error) {
 	if err != nil {
 		return nil, fmt.Errorf("DB初期化に失敗しました: %w", err)
 	}
-	if err := gorm.AutoMigrateAll(db); err != nil {
-		return nil, fmt.Errorf("DBマイグレーションに失敗しました: %w", err)
+	if shouldRunAutoMigrate() {
+		if err := gorm.AutoMigrateAll(db); err != nil {
+			return nil, fmt.Errorf("DBマイグレーションに失敗しました: %w", err)
+		}
 	}
 
 	// ユースケースの初期化
@@ -83,4 +87,14 @@ func NewRouter() (*echo.Echo, error) {
 	}
 
 	return e, nil
+}
+
+// shouldRunAutoMigrate は起動時マイグレーションの有効状態を返します。
+func shouldRunAutoMigrate() bool {
+	enabled, err := strconv.ParseBool(strings.TrimSpace(os.Getenv("AUTO_MIGRATE")))
+	if err != nil {
+		return false
+	}
+
+	return enabled
 }
