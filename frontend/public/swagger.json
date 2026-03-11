@@ -1,0 +1,752 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "Fish-Tech バックエンド API 仕様です。",
+        "title": "Fish-Tech API",
+        "contact": {},
+        "version": "1.0"
+    },
+    "basePath": "/api",
+    "paths": {
+        "/admin/fishes": {
+            "post": {
+                "description": "管理画面から魚を登録します。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "魚を登録",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "魚名",
+                        "name": "name",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "カテゴリ",
+                        "name": "category",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "説明",
+                        "name": "description",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "画像URL",
+                        "name": "imageUrl",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Google Photos の media ID",
+                        "name": "imageMediaId",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "関連リンクURL",
+                        "name": "linkUrl",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/handler.FishResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/fishes/upload-image": {
+            "post": {
+                "description": "魚画像を Google Photos へアップロードします。",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "画像をアップロード",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "画像ファイル",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/handler.UploadImageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/fishes/{id}": {
+            "delete": {
+                "description": "指定した魚を削除します。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "魚を削除",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "魚ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/pairs": {
+            "post": {
+                "description": "管理画面から魚相性を登録します。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "魚相性を登録",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "魚ID A",
+                        "name": "fishIdA",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "魚ID B",
+                        "name": "fishIdB",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "相性スコア",
+                        "name": "score",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "メモ",
+                        "name": "memo",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/handler.PairResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/pairs/{id}": {
+            "delete": {
+                "description": "指定した魚相性を削除します。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "魚相性を削除",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "相性ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/fishes": {
+            "get": {
+                "description": "公開中の魚一覧を返します。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Public"
+                ],
+                "summary": "魚一覧を取得",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handler.PublicFishListResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/hello": {
+            "get": {
+                "description": "API の動作確認メッセージを返します。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Public"
+                ],
+                "summary": "動作確認",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handler.HelloResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/pairs": {
+            "get": {
+                "description": "公開中の魚相性一覧を返します。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Public"
+                ],
+                "summary": "魚相性一覧を取得",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handler.PublicPairListResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/places/favorite": {
+            "patch": {
+                "description": "店舗のお気に入り状態を更新します。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Place"
+                ],
+                "summary": "店舗のお気に入り状態を更新",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ユーザーID",
+                        "name": "userId",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "店舗ID",
+                        "name": "placeId",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "お気に入り状態",
+                        "name": "favorite",
+                        "in": "query"
+                    },
+                    {
+                        "description": "後方互換用リクエストボディ",
+                        "name": "request",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/handler.UpdateFavoriteRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/places/recommendations": {
+            "get": {
+                "description": "条件に応じておすすめ店舗一覧を返します。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Place"
+                ],
+                "summary": "おすすめ店舗を取得",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "魚名",
+                        "name": "fishName",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "検索キーワード",
+                        "name": "keyword",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "HotPepper small_area コード",
+                        "name": "cityCode",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "ユーザーID",
+                        "name": "userId",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "お気に入りのみ取得",
+                        "name": "favorite",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "取得件数",
+                        "name": "count",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "ページ番号",
+                        "name": "page",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handler.PlaceRecommendationsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "handler.FishResponse": {
+            "type": "object",
+            "properties": {
+                "category": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "imageMediaId": {
+                    "type": "string"
+                },
+                "imageUrl": {
+                    "type": "string"
+                },
+                "linkUrl": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "handler.HelloResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "handler.PairResponse": {
+            "type": "object",
+            "properties": {
+                "fishIdA": {
+                    "type": "string"
+                },
+                "fishIdB": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "memo": {
+                    "type": "string"
+                },
+                "score": {
+                    "type": "integer"
+                }
+            }
+        },
+        "handler.PlaceRecommendationsResponse": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer"
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/handler.RecommendedPlaceResponse"
+                    }
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "perPage": {
+                    "type": "integer"
+                }
+            }
+        },
+        "handler.PublicFishListResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/handler.PublicFishResponse"
+                    }
+                }
+            }
+        },
+        "handler.PublicFishResponse": {
+            "type": "object",
+            "properties": {
+                "category": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "imageUrl": {
+                    "type": "string"
+                },
+                "linkUrl": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "handler.PublicPairListResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/handler.PublicPairResponse"
+                    }
+                }
+            }
+        },
+        "handler.PublicPairResponse": {
+            "type": "object",
+            "properties": {
+                "fishIdA": {
+                    "type": "string"
+                },
+                "fishIdB": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "memo": {
+                    "type": "string"
+                },
+                "score": {
+                    "type": "integer"
+                }
+            }
+        },
+        "handler.RecommendedPlaceResponse": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "card": {
+                    "type": "string"
+                },
+                "coupon": {
+                    "type": "string"
+                },
+                "genre": {
+                    "type": "string"
+                },
+                "lat": {
+                    "type": "string"
+                },
+                "lng": {
+                    "type": "string"
+                },
+                "logo": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "handler.UpdateFavoriteRequest": {
+            "type": "object",
+            "properties": {
+                "favorite": {
+                    "type": "boolean"
+                },
+                "placeId": {
+                    "type": "string"
+                },
+                "userId": {
+                    "type": "string"
+                }
+            }
+        },
+        "handler.UploadImageResponse": {
+            "type": "object",
+            "properties": {
+                "imageMediaId": {
+                    "type": "string"
+                },
+                "imageUrl": {
+                    "type": "string"
+                }
+            }
+        }
+    }
+}

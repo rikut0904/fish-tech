@@ -43,6 +43,16 @@ docker compose up --build
 
 このコマンドで `frontend`（3000）/ `admin`（3001）/ `backend`（8080）を同時起動できます。
 
+### Make コマンド
+
+```bash
+make swagger  # backend の Swagger コメントから frontend/public/swagger.json を更新
+make format   # Swagger 定義更新 + Go/Frontend/Admin の整形
+make test     # Swagger 定義更新 + Go test + Frontend/Admin lint
+make build    # Swagger 定義更新 + docker compose build
+make run      # docker compose up --build
+```
+
 ### 個別起動
 
 #### フロントエンド

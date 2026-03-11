@@ -52,8 +52,9 @@
         try {
           window.SwaggerUIBundle({
             dom_id: "#swagger-ui",
-            url: window.location.origin + "/openapi.json",
+            url: window.location.origin + "/swagger.json",
             deepLinking: true,
+            defaultModelsExpandDepth: -1,
             layout: "BaseLayout",
           });
         } catch (error) {
