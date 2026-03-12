@@ -5,8 +5,9 @@ WORKDIR /app
 RUN npm install -g npm@latest
 
 # パッケージファイルをコピー
+COPY package.json ./
+RUN npm install
 COPY package*.json ./
-RUN npm ci
 
 # ソースコードをコピー
 COPY . .
