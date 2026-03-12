@@ -4,7 +4,10 @@ const path = require('path');
 const appDir = path.join(__dirname, '..', 'app');
 const publicDir = path.join(__dirname, '..', 'public');
 const OUT = path.join(publicDir, 'sitemap.xml');
-const DOMAIN = process.env.SITE_DOMAIN || 'https://example.com';
+// 優先順: ローカル変数 SITE_DOMAIN, Next.js の公開 env (もしあれば), 最後にデフォルト
+const RAW_DOMAIN = process.env.SITE_DOMAIN || process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_SITE_DOMAIN || 'https://example.com';
+// 末尾のスラッシュを除去して `/path` と連結したときに `//` にならないようにする
+const DOMAIN = RAW_DOMAIN.replace(/\/$/, '');
 
 function walk(dir) {
   const entries = [];
