@@ -21,10 +21,6 @@ type AdminRepository struct {
 
 // NewAdminRepository は新しい管理画面リポジトリを作成します。
 func NewAdminRepository(db *gorm.DB) (*AdminRepository, error) {
-	if err := db.AutoMigrate(&model.Fish{}, &model.FishPair{}); err != nil {
-		return nil, err
-	}
-
 	return &AdminRepository{db: db}, nil
 }
 
