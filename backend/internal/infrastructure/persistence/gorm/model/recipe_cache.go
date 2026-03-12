@@ -4,7 +4,7 @@ import "time"
 
 // RecipeCache は recipe_cache テーブルのGORMモデルです。
 type RecipeCache struct {
-ID          string    "gorm:\"column:id;type:uuid;primaryKey\""
+	ID          string    `gorm:"column:id;type:varchar(255);primaryKey"`
 	Title       string    `gorm:"column:title;not null"`
 	ImageURL    *string   `gorm:"column:image_url"`
 	RecipeURL   string    `gorm:"column:recipe_url;not null"`
