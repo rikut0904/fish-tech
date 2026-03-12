@@ -7,8 +7,8 @@ type Diary struct {
 	ID        string     `gorm:"column:id;type:uuid;primaryKey"`
 	UserID    string     `gorm:"column:user_id;type:uuid;not null;index"`
 	FishID    string     `gorm:"column:fish_id;type:uuid;not null;index"`
-	RecipeID  *string    `gorm:"column:recipe_id;type:varchar(255)"`
-	PlaceID   *string    `gorm:"column:place_id;type:uuid"`
+	RecipeID  *string    `gorm:"column:recipe_id;type:text"`
+	PlaceID   *string    `gorm:"column:place_id;type:text"`
 	Date      time.Time  `gorm:"column:date;not null"`
 	Explain   *string    `gorm:"column:explain"`
 	Score     *int       `gorm:"column:score"`

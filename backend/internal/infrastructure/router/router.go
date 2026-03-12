@@ -4,8 +4,11 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strconv"
+	"strings"
 
 	"fish-tech/internal/infrastructure/googlephotos"
+	"fish-tech/internal/infrastructure/hotpepper"
 	"fish-tech/internal/infrastructure/persistence/gorm"
 	"fish-tech/internal/infrastructure/persistence/gorm/repository"
 	"fish-tech/internal/infrastructure/rakuten"
@@ -13,6 +16,7 @@ import (
 	adminHandler "fish-tech/internal/interface/handler/admin"
 	"fish-tech/internal/usecase/admin"
 	"fish-tech/internal/usecase/hello"
+	placeUseCasePkg "fish-tech/internal/usecase/place"
 	recipeUseCase "fish-tech/internal/usecase/recipe"
 
 	"github.com/labstack/echo/v4"
@@ -37,6 +41,11 @@ func NewRouter() (*echo.Echo, error) {
 	if err != nil {
 		return nil, fmt.Errorf("DB初期化に失敗しました: %w", err)
 	}
+	if shouldRunAutoMigrate() {
+		if err := gorm.AutoMigrateAll(db); err != nil {
+			return nil, fmt.Errorf("DBマイグレーションに失敗しました: %w", err)
+		}
+	}
 
 	// ユースケースの初期化
 	helloUseCase := hello.NewHelloUseCase()
@@ -46,6 +55,12 @@ func NewRouter() (*echo.Echo, error) {
 	}
 	photosClient := googlephotos.NewClientFromEnv()
 	adminUseCase := admin.NewAdminUseCaseWithResolver(adminRepository, photosClient)
+	hotpepperClient := hotpepper.NewClientFromEnv()
+	placeRepository, err := repository.NewPlaceRepository(db, hotpepperClient)
+	if err != nil {
+		return nil, fmt.Errorf("店舗キャッシュテーブル初期化に失敗しました: %w", err)
+	}
+	placeUseCase := placeUseCasePkg.NewPlaceUseCase(placeRepository)
 	rakutenClient := rakuten.NewClientFromEnv()
 	recipeRepository, err := repository.NewRecipeRepository(db)
 	if err != nil {
@@ -56,6 +71,7 @@ func NewRouter() (*echo.Echo, error) {
 	// ハンドラーの初期化
 	helloHandler := handler.NewHelloHandler(helloUseCase)
 	publicFishHandler := handler.NewPublicFishHandler(adminUseCase)
+	placeHandler := handler.NewPlaceHandler(placeUseCase)
 	recipeHandler := handler.NewRecipeHandler(recipeUC)
 	adminHTTPHandler := adminHandler.NewAdminHandler(adminUseCase, photosClient)
 	allowedAdminOrigins := parseAllowedOrigins(os.Getenv("ADMIN_ALLOWED_ORIGINS"), defaultAdminOrigin)
@@ -66,6 +82,8 @@ func NewRouter() (*echo.Echo, error) {
 		api.GET("/hello", helloHandler.GetHello)
 		api.GET("/fishes", publicFishHandler.ListFishes)
 		api.GET("/pairs", publicFishHandler.ListPairs)
+		api.GET("/places/recommendations", placeHandler.GetRecommendedPlaces)
+		api.PATCH("/places/favorite", placeHandler.UpdatePlaceFavorite)
 		api.GET("/recipes", recipeHandler.SearchRecipes)
 		api.GET("/recipes/seasonal", recipeHandler.GetSeasonalRecipes)
 		api.PATCH("/recipes/favorite", recipeHandler.UpdateRecipeFavorite)
@@ -83,6 +101,16 @@ func NewRouter() (*echo.Echo, error) {
 	}
 
 	return e, nil
+}
+
+// shouldRunAutoMigrate は起動時マイグレーションの有効状態を返します。
+func shouldRunAutoMigrate() bool {
+	enabled, err := strconv.ParseBool(strings.TrimSpace(os.Getenv("AUTO_MIGRATE")))
+	if err != nil {
+		return false
+	}
+
+	return enabled
 }
 
 type rakutenClientAdapter struct {

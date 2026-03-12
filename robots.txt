@@ -1,0 +1,6 @@
+# robots.txt: クローラ向け設定
+# `Sitemap` のホスト名はデプロイ先のドメインに書き換えてください（例: https://your-domain.example/sitemap.xml）
+User-agent: *
+Allow: /
+
+Sitemap: https://gyogyolog.bloomia.cloud/sitemap.xml

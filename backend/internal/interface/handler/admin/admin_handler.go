@@ -58,6 +58,8 @@ type uploadImageResponse struct {
 
 type updateFishSeasonsRequest struct {
 	Months []int `json:"months"`
+	ImageURL     string `json:"imageUrl"`
+	ImageMediaID string `json:"imageMediaId,omitempty"`
 }
 
 // CreateFish は魚を登録します。
@@ -86,7 +88,6 @@ func (h *AdminHandler) CreateFish(c echo.Context) error {
 		ImageURL:     fish.ImageURL,
 		ImageMediaID: fish.ImageMediaID,
 		LinkURL:      fish.LinkURL,
-		Months:       fish.Months,
 	})
 }
 
