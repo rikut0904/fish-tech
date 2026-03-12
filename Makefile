@@ -1,7 +1,7 @@
 GOCACHE := /tmp/go-build-cache
 GOMODCACHE := /tmp/go-mod-cache
 
-.PHONY: swag fmt lint test run up upd build down logs
+.PHONY: swag ci fmt lint test run up upd build down logs
 
 swag:
 	cp frontend/public/swagger.json /tmp/fish-tech-swagger.prev.json 2>/dev/null || true
@@ -9,7 +9,13 @@ swag:
 	node ./script/update_swagger_version.js ./backend/cmd/api/main.go ./frontend/public/swagger.json /tmp/fish-tech-swagger.prev.json
 	rm -f /tmp/fish-tech-swagger.prev.json
 
-fmt: swag
+ci:
+	make swag
+	make fmt
+	make lint
+	make test
+
+fmt:
 	cd backend && GOCACHE=$(GOCACHE) GOMODCACHE=$(GOMODCACHE) go fix ./...
 	cd backend && GOCACHE=$(GOCACHE) GOMODCACHE=$(GOMODCACHE) go run golang.org/x/tools/cmd/goimports@v0.31.0 -w ./cmd ./internal
 	cd backend && gofmt -w ./cmd ./internal
@@ -20,7 +26,7 @@ lint:
 	cd frontend && npm run lint
 	cd admin && npm run lint
 
-test: fmt
+test: 
 	cd backend && GOCACHE=$(GOCACHE) GOMODCACHE=$(GOMODCACHE) go test ./...
 
 up: 
