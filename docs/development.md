@@ -61,6 +61,17 @@ go mod download
 go run ./cmd/api/main.go
 ```
 
+### バックエンド環境変数
+
+```env
+DATABASE_URL=postgresql://user:password@host:port/database
+HOTPEPPER_API_KEY=xxxxxxxxxxxxxxxx
+AUTO_MIGRATE=false
+```
+
+- `AUTO_MIGRATE` は起動時に DB マイグレーションを実行するかどうかの設定です。
+- 既定値は `false` です。`true` を設定したときだけ、バックエンド起動時に `AutoMigrateAll` を実行します。
+
 Google Photosへの画像アップロード機能を利用する場合は、下記の手順で取得した値を `backend/.env` に設定してください。
 
 ### Google Photos連携の設定手順
