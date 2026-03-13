@@ -6,7 +6,7 @@ import "time"
 type UserRecipeLinks struct {
 	UserID    string     `gorm:"column:user_id;type:uuid;primaryKey"`
 	RecipeID  string     `gorm:"column:recipe_id;type:text;primaryKey"`
-	Like      bool       `gorm:"column:like;not null;default:false"`
+	IsLikes   bool       `gorm:"column:is_likes;not null;default:false"`
 	CreatedAt time.Time  `gorm:"column:created_at;not null"`
 	UpdatedAt *time.Time `gorm:"column:updated_at"`
 }

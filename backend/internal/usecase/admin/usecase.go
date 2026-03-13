@@ -25,6 +25,8 @@ var (
 	ErrFishNotFound = errors.New("魚が見つかりません")
 	// ErrPairNotFound は指定相性データが存在しない場合のエラーです。
 	ErrPairNotFound = errors.New("相性データが見つかりません")
+	// ErrInvalidSeasonMonth は旬の月が不正な場合のエラーです。
+	ErrInvalidSeasonMonth = errors.New("monthは1から12で指定してください")
 )
 
 // Repository は管理画面向けデータアクセスのインターフェースです。
@@ -37,6 +39,7 @@ type Repository interface {
 	DeletePair(ctx context.Context, id string) error
 	ExistsFish(ctx context.Context, id string) (bool, error)
 	ExistsPair(ctx context.Context, fishIDa string, fishIDb string) (bool, error)
+	ReplaceFishSeasons(ctx context.Context, fishID string, months []int) error
 }
 
 // MediaURLResolver は画像URL解決機能のインターフェースです。
@@ -52,6 +55,7 @@ type UseCase interface {
 	ListPairs(ctx context.Context) ([]adminDomain.FishPair, error)
 	CreatePair(ctx context.Context, fishIDa string, fishIDb string, score int, memo string) (adminDomain.FishPair, error)
 	DeletePair(ctx context.Context, id string) error
+	UpdateFishSeasons(ctx context.Context, fishID string, months []int) error
 }
 
 type adminUseCase struct {
@@ -186,6 +190,38 @@ func (u *adminUseCase) DeletePair(ctx context.Context, id string) error {
 	}
 
 	return u.repo.DeletePair(ctx, id)
+}
+
+// UpdateFishSeasons は魚の旬月を置き換えます。
+func (u *adminUseCase) UpdateFishSeasons(ctx context.Context, fishID string, months []int) error {
+	fishID = strings.TrimSpace(fishID)
+	if fishID == "" {
+		return ErrFishNotFound
+	}
+
+	existsFish, err := u.repo.ExistsFish(ctx, fishID)
+	if err != nil {
+		return err
+	}
+	if !existsFish {
+		return ErrFishNotFound
+	}
+
+	normalizedMonths := make([]int, 0, len(months))
+	seen := make(map[int]struct{}, len(months))
+	for _, month := range months {
+		if month < 1 || month > 12 {
+			return ErrInvalidSeasonMonth
+		}
+		if _, ok := seen[month]; ok {
+			continue
+		}
+		seen[month] = struct{}{}
+		normalizedMonths = append(normalizedMonths, month)
+	}
+	sort.Ints(normalizedMonths)
+
+	return u.repo.ReplaceFishSeasons(ctx, fishID, normalizedMonths)
 }
 
 func normalizePairIDs(a string, b string) (string, string) {
