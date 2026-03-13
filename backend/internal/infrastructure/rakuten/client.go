@@ -41,7 +41,6 @@ type RankingRecipe struct {
 // Client は楽天レシピAPIクライアントです。
 type Client struct {
 	httpClient  *http.Client
-	appURL      string
 	appID       string
 	accessKey   string
 	affiliateID string
@@ -51,7 +50,6 @@ type Client struct {
 func NewClientFromEnv() *Client {
 	return &Client{
 		httpClient:  &http.Client{Timeout: 30 * time.Second},
-		appURL:      strings.TrimSpace(os.Getenv("RAKUTEN_APP_URL")),
 		appID:       strings.TrimSpace(os.Getenv("RAKUTEN_APP_ID")),
 		accessKey:   strings.TrimSpace(os.Getenv("RAKUTEN_APP_ACCESS_KEY")),
 		affiliateID: strings.TrimSpace(os.Getenv("RAKUTEN_APP_AFILIATE_ID")),
@@ -83,7 +81,6 @@ func (c *Client) ListCategories(ctx context.Context) ([]Category, error) {
 		query.Set("affiliateId", c.affiliateID)
 	}
 	req.URL.RawQuery = query.Encode()
-	req.Header.Set("Authorization", "Bearer "+c.accessKey)
 	log.Printf("rakuten: カテゴリ一覧リクエストを送信します endpoint=%q", categoryListEndpoint)
 
 	res, err := c.httpClient.Do(req)
@@ -153,7 +150,6 @@ func (c *Client) GetCategoryRanking(ctx context.Context, categoryID string, cate
 		query.Set("affiliateId", c.affiliateID)
 	}
 	req.URL.RawQuery = query.Encode()
-	req.Header.Set("Authorization", "Bearer "+c.accessKey)
 	log.Printf("rakuten: ランキングリクエストを送信します category_id=%q category_name=%q", categoryID, categoryName)
 
 	res, err := c.httpClient.Do(req)
