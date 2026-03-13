@@ -4,4 +4,4 @@ node_modules/
 next-env.d.ts
 .claude
 
-.nvmrc
+.nvmrc.env
