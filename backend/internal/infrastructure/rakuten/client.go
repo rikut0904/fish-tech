@@ -14,8 +14,8 @@ import (
 )
 
 const (
-	categoryListEndpoint    = "https://app.rakuten.co.jp/services/api/Recipe/CategoryList/20170426"
-	categoryRankingEndpoint = "https://app.rakuten.co.jp/services/api/Recipe/CategoryRanking/20170426"
+	categoryListEndpoint    = "https://openapi.rakuten.co.jp/recipems/api/Recipe/CategoryList/20170426"
+	categoryRankingEndpoint = "https://openapi.rakuten.co.jp/recipems/api/Recipe/CategoryRanking/20170426"
 )
 
 // Category は楽天レシピカテゴリ情報です。
@@ -60,7 +60,7 @@ func NewClientFromEnv() *Client {
 
 // Enabled は楽天レシピAPIの設定有無を返します。
 func (c *Client) Enabled() bool {
-	return c.appID != ""
+	return c.appID != "" && c.accessKey != ""
 }
 
 // ListCategories は楽天レシピカテゴリ一覧を返します。
@@ -76,12 +76,14 @@ func (c *Client) ListCategories(ctx context.Context) ([]Category, error) {
 
 	query := url.Values{}
 	query.Set("applicationId", c.appID)
+	query.Set("accessKey", c.accessKey)
 	query.Set("format", "json")
 	query.Set("formatVersion", "2")
 	if c.affiliateID != "" {
 		query.Set("affiliateId", c.affiliateID)
 	}
 	req.URL.RawQuery = query.Encode()
+	req.Header.Set("Authorization", "Bearer "+c.accessKey)
 	log.Printf("rakuten: カテゴリ一覧リクエストを送信します endpoint=%q", categoryListEndpoint)
 
 	res, err := c.httpClient.Do(req)
@@ -143,6 +145,7 @@ func (c *Client) GetCategoryRanking(ctx context.Context, categoryID string, cate
 
 	query := url.Values{}
 	query.Set("applicationId", c.appID)
+	query.Set("accessKey", c.accessKey)
 	query.Set("format", "json")
 	query.Set("formatVersion", "2")
 	query.Set("categoryId", categoryID)
@@ -150,6 +153,7 @@ func (c *Client) GetCategoryRanking(ctx context.Context, categoryID string, cate
 		query.Set("affiliateId", c.affiliateID)
 	}
 	req.URL.RawQuery = query.Encode()
+	req.Header.Set("Authorization", "Bearer "+c.accessKey)
 	log.Printf("rakuten: ランキングリクエストを送信します category_id=%q category_name=%q", categoryID, categoryName)
 
 	res, err := c.httpClient.Do(req)
