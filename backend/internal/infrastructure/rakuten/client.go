@@ -80,9 +80,7 @@ func (c *Client) ListCategories(ctx context.Context) ([]Category, error) {
 	query.Set("format", "json")
 	query.Set("formatVersion", "2")
 	req.URL.RawQuery = query.Encode()
-	req.Header.Set("Authorization", "Bearer "+c.accessKey)
-	req.Header.Set("Referer", c.appURL)
-	log.Printf("rakuten: カテゴリ一覧リクエスト app_url=%q referer=%q", c.appURL, req.Header.Get("Referer"))
+	log.Printf("rakuten: カテゴリ一覧リクエスト url=%q app_url=%q", req.URL.String(), c.appURL)
 
 	res, err := c.httpClient.Do(req)
 	if err != nil {
@@ -151,9 +149,7 @@ func (c *Client) GetCategoryRanking(ctx context.Context, categoryID string, cate
 		query.Set("affiliateId", c.affiliateID)
 	}
 	req.URL.RawQuery = query.Encode()
-	req.Header.Set("Authorization", "Bearer "+c.accessKey)
-	req.Header.Set("Referer", c.appURL)
-	log.Printf("rakuten: ランキングリクエスト category_id=%q category_name=%q app_url=%q referer=%q", categoryID, categoryName, c.appURL, req.Header.Get("Referer"))
+	log.Printf("rakuten: ランキングリクエスト category_id=%q category_name=%q url=%q app_url=%q", categoryID, categoryName, req.URL.String(), c.appURL)
 
 	res, err := c.httpClient.Do(req)
 	if err != nil {
