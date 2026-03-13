@@ -76,6 +76,7 @@ func (c *Client) ListCategories(ctx context.Context) ([]Category, error) {
 
 	query := url.Values{}
 	query.Set("applicationId", c.appID)
+	query.Set("accessKey", c.accessKey)
 	query.Set("format", "json")
 	query.Set("formatVersion", "2")
 	req.URL.RawQuery = query.Encode()
@@ -141,6 +142,7 @@ func (c *Client) GetCategoryRanking(ctx context.Context, categoryID string, cate
 
 	query := url.Values{}
 	query.Set("applicationId", c.appID)
+	query.Set("accessKey", c.accessKey)
 	query.Set("format", "json")
 	query.Set("formatVersion", "2")
 	query.Set("categoryId", categoryID)
