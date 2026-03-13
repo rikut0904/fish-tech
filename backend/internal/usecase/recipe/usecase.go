@@ -3,6 +3,7 @@ package recipe
 import (
 	"context"
 	"errors"
+	"log"
 	"strings"
 	"unicode"
 
@@ -156,9 +157,8 @@ func (u *recipeUseCase) GetSeasonalRecipes(ctx context.Context, condition recipe
 	if len(recipes) == 0 && u.rakuten != nil && u.rakuten.Enabled() {
 		fetched, fetchErr := u.fetchRecipes(ctx, selectedFish.Name)
 		if fetchErr != nil {
-			return Response{}, ErrRakutenRecipesUnavailable
-		}
-		if len(fetched) > 0 {
+			log.Printf("recipe: 楽天APIから旬レシピ取得に失敗しました fish=%q err=%v", selectedFish.Name, fetchErr)
+		} else if len(fetched) > 0 {
 			if replaceErr := u.repo.ReplaceFishRecipes(ctx, selectedFish.ID, fetched); replaceErr != nil {
 				return Response{}, replaceErr
 			}
@@ -201,9 +201,8 @@ func (u *recipeUseCase) SearchRecipes(ctx context.Context, condition recipeDomai
 		if fish != nil {
 			fetched, fetchErr := u.fetchRecipes(ctx, fish.Name)
 			if fetchErr != nil {
-				return SearchResponse{}, ErrRakutenRecipesUnavailable
-			}
-			if len(fetched) > 0 {
+				log.Printf("recipe: 楽天APIから魚名指定レシピ取得に失敗しました fish=%q err=%v", fish.Name, fetchErr)
+			} else if len(fetched) > 0 {
 				if replaceErr := u.repo.ReplaceFishRecipes(ctx, fish.ID, fetched); replaceErr != nil {
 					return SearchResponse{}, replaceErr
 				}
@@ -226,11 +225,10 @@ func (u *recipeUseCase) SearchRecipes(ctx context.Context, condition recipeDomai
 			limit = 3
 		}
 		var fetchedAny bool
-		var lastFetchErr error
 		for i := 0; i < limit; i++ {
 			fetched, fetchErr := u.fetchRecipes(ctx, fishes[i].Name)
 			if fetchErr != nil {
-				lastFetchErr = fetchErr
+				log.Printf("recipe: 楽天APIから汎用レシピ取得に失敗しました fish=%q err=%v", fishes[i].Name, fetchErr)
 				continue
 			}
 			if len(fetched) == 0 {
@@ -241,13 +239,11 @@ func (u *recipeUseCase) SearchRecipes(ctx context.Context, condition recipeDomai
 			}
 			fetchedAny = true
 		}
-		if !fetchedAny && lastFetchErr != nil {
-			return SearchResponse{}, ErrRakutenRecipesUnavailable
-		}
-
-		items, total, err = u.repo.SearchRecipes(ctx, condition)
-		if err != nil {
-			return SearchResponse{}, err
+		if fetchedAny {
+			items, total, err = u.repo.SearchRecipes(ctx, condition)
+			if err != nil {
+				return SearchResponse{}, err
+			}
 		}
 	}
 

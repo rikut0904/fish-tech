@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -87,6 +89,8 @@ func (c *Client) ListCategories(ctx context.Context) ([]Category, error) {
 	defer res.Body.Close()
 
 	if res.StatusCode < 200 || res.StatusCode >= 300 {
+		snippet := readErrorBodySnippet(res)
+		log.Printf("rakuten: カテゴリ一覧取得失敗 status=%d body=%q", res.StatusCode, snippet)
 		return nil, fmt.Errorf("楽天レシピカテゴリ一覧取得エラー: status=%d", res.StatusCode)
 	}
 
@@ -154,6 +158,8 @@ func (c *Client) GetCategoryRanking(ctx context.Context, categoryID string, cate
 	defer res.Body.Close()
 
 	if res.StatusCode < 200 || res.StatusCode >= 300 {
+		snippet := readErrorBodySnippet(res)
+		log.Printf("rakuten: ランキング取得失敗 status=%d category_id=%q category_name=%q body=%q", res.StatusCode, categoryID, categoryName, snippet)
 		return nil, fmt.Errorf("楽天レシピランキング取得エラー: status=%d", res.StatusCode)
 	}
 
@@ -212,4 +218,13 @@ func (c *Client) GetCategoryRanking(ctx context.Context, categoryID string, cate
 	}
 
 	return result, nil
+}
+
+func readErrorBodySnippet(res *http.Response) string {
+	body, err := io.ReadAll(io.LimitReader(res.Body, 512))
+	if err != nil {
+		return "response body read failed"
+	}
+
+	return strings.TrimSpace(string(body))
 }
