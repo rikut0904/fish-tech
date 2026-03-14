@@ -5,27 +5,24 @@ export default function Header() {
         <header className="bg-white shadow-md py-4 px-6 flex items-center justify-between">
             <div className="flex items-center gap-2">
                 <Link href="/">
-                    <span className="text-2xl font-bold text-blue-700">FishTech</span>
+                    <span className="text-xl md:text-2xl font-bold text-blue-700">FishTech</span>
                 </Link>
             </div>
             <nav className="space-x-4">
                 <Link href="/">
-                    <span className="text-blue-700 hover:underline">ホーム</span>
+                    <span className="text-sm md:text-base text-blue-700 hover:underline">ホーム</span>
                 </Link>
                 <Link href="/recipe">
-                    <span className="text-blue-700 hover:underline">レシピ</span>
+                    <span className="text-sm md:text-base text-blue-700 hover:underline">レシピ</span>
                 </Link>
                 <Link href="/#encyclopedia">
-                    <span className="text-blue-700 hover:underline">魚図鑑</span>
+                    <span className="text-sm md:text-base text-blue-700 hover:underline">魚図鑑</span>
                 </Link>
                 <Link href="/about">
-                    <span className="text-blue-700 hover:underline">このサイトについて</span>
-                </Link>
-                <Link href="/privacy">
-                    <span className="text-blue-700 hover:underline">プライバシーポリシー</span>
+                    <span className="text-sm md:text-base text-blue-700 hover:underline">このサイトについて</span>
                 </Link>
                 <Link href="/contact">
-                    <span className="text-blue-700 hover:underline">お問い合わせ</span>
+                    <span className="text-sm md:text-base text-blue-700 hover:underline">お問い合わせ</span>
                 </Link>
                 {/* <Link href="/login">
                     <span className="text-blue-700 hover:underline">ログイン</span>

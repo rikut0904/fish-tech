@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Header from "@/app/components/header";
@@ -51,6 +51,11 @@ export const metadata: Metadata = {
     shortcut: "/fishtech-favicon.webp",
     apple: "/fishtech-favicon.webp",
   },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default function RootLayout({
