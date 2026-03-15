@@ -21,9 +21,9 @@ type Recipe = {
 };
 
 const fishes: Fish[] = [
-  { id: '1', name: 'サーモン', image: '/fish/salmon.jpg' },
+  { id: '1', name: 'サーモン', image: '/recipe/salmon.png' },
   { id: '2', name: 'マグロ', image: '/recipes-sample/image.png' },
-  { id: '3', name: 'タイ', image: '/fish/tai.jpg' },
+  { id: '3', name: 'タイ', image: '/recipe/tai.png' },
 ];
 
 const recipesData: Record<string, Recipe[]> = {
