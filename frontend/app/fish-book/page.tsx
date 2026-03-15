@@ -4,6 +4,7 @@ import React from 'react';
 import { useRouter } from 'next/navigation';
 import { allFishData } from './data';
 import { Shop } from "../types/shop";
+import Image from 'next/image';
 
 
 // モックデータ (店舗)
@@ -28,9 +29,7 @@ export default function FishApp() {
                         onClick={() => router.push(`/fish-book/detail/${fish.id}`)}
                         className="border rounded-xl overflow-hidden shadow-sm hover:shadow-md transition bg-gray-50 text-left"
                     >
-                        <div className="aspect-video bg-gray-200 flex items-center justify-center text-gray-400">
-                            画像
-                        </div>
+                        <Image src="/hero/fish_01.jpg" alt={fish.name} width={400} height={300} className="w-full h-32 object-cover" />
                         <div className="p-3">
                             <p className="font-bold text-blue-800">{fish.name}</p>
                             <p className="text-xs text-gray-500 italic">{fish.scientificName}</p>

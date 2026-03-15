@@ -2,6 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
 import { allFishData } from '../../data';
+import Image from 'next/image';
 
 export default function FishDetail1() {
     const fish = allFishData.find(f => f.id === 1);
@@ -22,9 +23,7 @@ export default function FishDetail1() {
                 <div className="flex-1 text-center font-bold">{fish.name} / {fish.scientificName}</div>
             </header>
             <main className="p-4 max-w-md mx-auto space-y-4">
-                <div className="bg-gray-200 aspect-video flex items-center justify-center text-2xl font-bold rounded-lg">
-                    魚の画像を表示
-                </div>
+                <Image src="/hero/fish_01.jpg" alt={fish.name} width={400} height={300} className="w-full h-auto rounded-lg object-cover" />
 
                 <div className="grid grid-cols-2 gap-2 text-sm">
                     <p>別名：{fish.details.alias}</p>
