@@ -15,7 +15,7 @@ export default function Header() {
                 <Link href="/recipe">
                     <span className="text-blue-700 hover:underline">レシピ</span>
                 </Link>
-                <Link href="/#encyclopedia">
+                <Link href="/fish-book">
                     <span className="text-blue-700 hover:underline">魚図鑑</span>
                 </Link>
                 <Link href="/about">
