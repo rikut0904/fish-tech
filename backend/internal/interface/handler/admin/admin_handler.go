@@ -30,7 +30,7 @@ func NewAdminHandler(useCase adminUseCase.UseCase, uploader ImageUploader) *Admi
 	return &AdminHandler{useCase: useCase, uploader: uploader}
 }
 
-type fishResponse struct {
+type FishResponse struct {
 	ID           string `json:"id"`
 	Name         string `json:"name"`
 	Category     string `json:"category"`
@@ -40,7 +40,7 @@ type fishResponse struct {
 	LinkURL      string `json:"linkUrl"`
 }
 
-type pairResponse struct {
+type PairResponse struct {
 	ID      string `json:"id"`
 	FishIDa string `json:"fishIdA"`
 	FishIDb string `json:"fishIdB"`
@@ -48,12 +48,26 @@ type pairResponse struct {
 	Memo    string `json:"memo"`
 }
 
-type uploadImageResponse struct {
+type UploadImageResponse struct {
 	ImageURL     string `json:"imageUrl"`
 	ImageMediaID string `json:"imageMediaId,omitempty"`
 }
 
 // CreateFish は魚を登録します。
+// @Summary 魚を登録
+// @Description 管理画面から魚を登録します。
+// @Tags Admin
+// @Produce json
+// @Param name query string true "魚名"
+// @Param category query string true "カテゴリ"
+// @Param description query string false "説明"
+// @Param imageUrl query string false "画像URL"
+// @Param imageMediaId query string false "Google Photos の media ID"
+// @Param linkUrl query string false "関連リンクURL"
+// @Success 201 {object} FishResponse
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /admin/fishes [post]
 func (h *AdminHandler) CreateFish(c echo.Context) error {
 	fish, err := h.useCase.CreateFish(
 		c.Request().Context(),
@@ -71,7 +85,7 @@ func (h *AdminHandler) CreateFish(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "魚の登録に失敗しました"})
 	}
 
-	return c.JSON(http.StatusCreated, fishResponse{
+	return c.JSON(http.StatusCreated, FishResponse{
 		ID:           fish.ID,
 		Name:         fish.Name,
 		Category:     fish.Category,
@@ -83,6 +97,16 @@ func (h *AdminHandler) CreateFish(c echo.Context) error {
 }
 
 // UploadFishImage は魚画像をGoogle Photosへアップロードします。
+// @Summary 画像をアップロード
+// @Description 魚画像を Google Photos へアップロードします。
+// @Tags Admin
+// @Accept multipart/form-data
+// @Produce json
+// @Param file formData file true "画像ファイル"
+// @Success 201 {object} UploadImageResponse
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /admin/fishes/upload-image [post]
 func (h *AdminHandler) UploadFishImage(c echo.Context) error {
 	if h.uploader == nil || !h.uploader.Enabled() {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Google Photos設定が不足しています"})
@@ -117,13 +141,23 @@ func (h *AdminHandler) UploadFishImage(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
-	return c.JSON(http.StatusCreated, uploadImageResponse{
+	return c.JSON(http.StatusCreated, UploadImageResponse{
 		ImageURL:     imageURL,
 		ImageMediaID: imageMediaID,
 	})
 }
 
 // DeleteFish は魚を削除します。
+// @Summary 魚を削除
+// @Description 指定した魚を削除します。
+// @Tags Admin
+// @Produce json
+// @Param id path string true "魚ID"
+// @Success 204
+// @Failure 400 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /admin/fishes/{id} [delete]
 func (h *AdminHandler) DeleteFish(c echo.Context) error {
 	id := c.Param("id")
 	if id == "" {
@@ -141,6 +175,18 @@ func (h *AdminHandler) DeleteFish(c echo.Context) error {
 }
 
 // CreatePair は魚相性を登録します。
+// @Summary 魚相性を登録
+// @Description 管理画面から魚相性を登録します。
+// @Tags Admin
+// @Produce json
+// @Param fishIdA query string true "魚ID A"
+// @Param fishIdB query string true "魚ID B"
+// @Param score query int true "相性スコア"
+// @Param memo query string false "メモ"
+// @Success 201 {object} PairResponse
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /admin/pairs [post]
 func (h *AdminHandler) CreatePair(c echo.Context) error {
 	score, err := strconv.Atoi(c.QueryParam("score"))
 	if err != nil {
@@ -165,7 +211,7 @@ func (h *AdminHandler) CreatePair(c echo.Context) error {
 		}
 	}
 
-	return c.JSON(http.StatusCreated, pairResponse{
+	return c.JSON(http.StatusCreated, PairResponse{
 		ID:      pair.ID,
 		FishIDa: pair.FishIDa,
 		FishIDb: pair.FishIDb,
@@ -175,6 +221,16 @@ func (h *AdminHandler) CreatePair(c echo.Context) error {
 }
 
 // DeletePair は魚相性を削除します。
+// @Summary 魚相性を削除
+// @Description 指定した魚相性を削除します。
+// @Tags Admin
+// @Produce json
+// @Param id path string true "相性ID"
+// @Success 204
+// @Failure 400 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /admin/pairs/{id} [delete]
 func (h *AdminHandler) DeletePair(c echo.Context) error {
 	id := c.Param("id")
 	if id == "" {

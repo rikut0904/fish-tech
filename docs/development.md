@@ -43,6 +43,22 @@ docker compose up --build
 
 このコマンドで `frontend`（3000）/ `admin`（3001）/ `backend`（8080）を同時起動できます。
 
+### Make コマンド
+
+```bash
+make swag     # backend の Swagger コメントから frontend/public/swagger.json を更新
+make fmt      # Swagger 定義更新 + go fix + goimports + gofmt + Frontend/Admin の整形
+make lint     # Frontend/Admin lint
+make test     # Frontend/Admin lint + Go test
+make build    # Swagger 定義更新 + docker compose build
+make run      # docker compose up --build を実行
+```
+
+- Swagger の `info.version` は `backend/cmd/api/main.go` の `@version` コメントを基準に更新されます。
+- `x.y` 形式で、`x` はコード側で手動管理、`make swag` 実行時に同じ `x` の範囲で `y` が自動インクリメントされます。
+- Swagger UI の Try it out 先は `NEXT_PUBLIC_SWAGGER_API_BASE_URL` で切り替えられます。未指定時は `NEXT_PUBLIC_API_BASE_URL`、さらに未指定なら `http://localhost:8080/api` を使用します。
+- backend 側では `SWAGGER_ALLOWED_ORIGINS` と `SWAGGER_ALLOWED_REFERER_PATHS` に一致する Swagger UI からの管理 API アクセスのみを許可します。
+
 ### 個別起動
 
 #### フロントエンド

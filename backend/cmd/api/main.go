@@ -8,6 +8,10 @@ import (
 	"fish-tech/internal/shared/timeutil"
 )
 
+// @title Fish-Tech API
+// @version 1.0
+// @description Fish-Tech バックエンド API 仕様です。
+// @BasePath /api
 func main() {
 	time.Local = timeutil.JSTLocation()
 
