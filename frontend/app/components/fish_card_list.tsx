@@ -2,9 +2,9 @@
 import FishCard from "@/app/components/fish_card";
 
 const fishList = [
-    { name: "カマス", desc: "淡白で上品な味わい。塩焼きや干物が人気。", image: "/fish-kamasu.png" },
-    { name: "アカガレイ", desc: "煮付けや唐揚げで美味しい白身魚。", image: "/fish-akagarei.png" },
-    { name: "メギス", desc: "すり身や天ぷらで親しまれる地魚。", image: "/fish-megisu.png" },
+    { name: "カマス", desc: "淡白で上品な味わい。塩焼きや干物が人気。", image: "/recomend/kamasu.jpg" },
+    { name: "アカガレイ", desc: "煮付けや唐揚げで美味しい白身魚。", image: "/recomend/aka-karei.jpg" },
+    { name: "メギス", desc: "すり身や天ぷらで親しまれる地魚。", image: "/recomend/meigsu.jpg" },
 ];
 
 export default function FishCardList() {
