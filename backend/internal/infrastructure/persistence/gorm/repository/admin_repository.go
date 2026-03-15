@@ -96,9 +96,14 @@ func (r *AdminRepository) DeleteFish(ctx context.Context, id string) error {
 }
 
 // ListPairs は魚相性一覧を返します。
-func (r *AdminRepository) ListPairs(ctx context.Context) ([]adminDomain.FishPair, error) {
+func (r *AdminRepository) ListPairs(ctx context.Context, fishID string) ([]adminDomain.FishPair, error) {
 	var rows []model.FishPair
-	if err := r.db.WithContext(ctx).Order("created_at desc").Find(&rows).Error; err != nil {
+	query := r.db.WithContext(ctx).Order("created_at desc")
+	if fishID != "" {
+		query = query.Where("fish_a_id = ? OR fish_b_id = ?", fishID, fishID)
+	}
+
+	if err := query.Find(&rows).Error; err != nil {
 		return nil, err
 	}
 

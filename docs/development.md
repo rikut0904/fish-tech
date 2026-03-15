@@ -61,6 +61,9 @@ go mod download
 go run ./cmd/api/main.go
 ```
 
+`go run ./cmd/api/main.go` は、`DATABASE_URL` などがシェル環境に未設定でも、`backend/.env` または `./.env` を自動で読み込みます。  
+すでに環境変数が設定されている場合は、その値を優先します。
+
 ### バックエンド環境変数
 
 ```env
