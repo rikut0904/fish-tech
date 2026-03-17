@@ -16,14 +16,28 @@ type PlaceHandler struct {
 	useCase placeUseCase.UseCase
 }
 
-type placeRecommendationsResponse struct {
-	Page    int                            `json:"page"`
-	PerPage int                            `json:"perPage"`
-	Count   int                            `json:"count"`
-	Items   []placeDomain.RecommendedPlace `json:"items"`
+// RecommendedPlaceResponse はおすすめ店舗レスポンスです。
+type RecommendedPlaceResponse struct {
+	Name    string `json:"name"`
+	Address string `json:"address"`
+	Lat     string `json:"lat"`
+	Lng     string `json:"lng"`
+	Coupon  string `json:"coupon"`
+	Genre   string `json:"genre"`
+	Card    string `json:"card"`
+	Logo    string `json:"logo"`
 }
 
-type updateFavoriteRequest struct {
+// PlaceRecommendationsResponse はおすすめ店舗一覧レスポンスです。
+type PlaceRecommendationsResponse struct {
+	Page    int                        `json:"page"`
+	PerPage int                        `json:"perPage"`
+	Count   int                        `json:"count"`
+	Items   []RecommendedPlaceResponse `json:"items"`
+}
+
+// UpdateFavoriteRequest は店舗お気に入り更新リクエストです。
+type UpdateFavoriteRequest struct {
 	UserID   string `json:"userId"`
 	PlaceID  string `json:"placeId"`
 	Favorite bool   `json:"favorite"`
@@ -57,6 +71,22 @@ func NewPlaceHandler(useCase placeUseCase.UseCase) *PlaceHandler {
 }
 
 // GetRecommendedPlaces はおすすめ店舗一覧を返します。
+// @Summary おすすめ店舗を取得
+// @Description 条件に応じておすすめ店舗一覧を返します。
+// @Tags Place
+// @Produce json
+// @Param fishName query string false "魚名"
+// @Param keyword query string false "検索キーワード"
+// @Param cityCode query string false "HotPepper small_area コード"
+// @Param userId query string false "ユーザーID"
+// @Param favorite query boolean false "お気に入りのみ取得"
+// @Param count query int false "取得件数"
+// @Param page query int false "ページ番号"
+// @Success 200 {object} PlaceRecommendationsResponse
+// @Failure 400 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /places/recommendations [get]
 func (h *PlaceHandler) GetRecommendedPlaces(c echo.Context) error {
 	for key := range c.QueryParams() {
 		if _, ok := allowedPlaceQueries[key]; !ok {
@@ -120,15 +150,43 @@ func (h *PlaceHandler) GetRecommendedPlaces(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
-	return c.JSON(http.StatusOK, placeRecommendationsResponse{
+	items := make([]RecommendedPlaceResponse, 0, len(places))
+	for _, place := range places {
+		items = append(items, RecommendedPlaceResponse{
+			Name:    place.Name,
+			Address: place.Address,
+			Lat:     place.Lat,
+			Lng:     place.Lng,
+			Coupon:  place.Coupon,
+			Genre:   place.Genre,
+			Card:    place.Card,
+			Logo:    place.Logo,
+		})
+	}
+
+	return c.JSON(http.StatusOK, PlaceRecommendationsResponse{
 		Page:    condition.Page,
 		PerPage: condition.Count,
 		Count:   len(places),
-		Items:   places,
+		Items:   items,
 	})
 }
 
 // UpdatePlaceFavorite は店舗のお気に入り状態を更新します。
+// @Summary 店舗のお気に入り状態を更新
+// @Description 店舗のお気に入り状態を更新します。
+// @Tags Place
+// @Accept json
+// @Produce json
+// @Param userId query string false "ユーザーID"
+// @Param placeId query string false "店舗ID"
+// @Param favorite query boolean false "お気に入り状態"
+// @Param request body UpdateFavoriteRequest false "後方互換用リクエストボディ"
+// @Success 204
+// @Failure 400 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /places/favorite [patch]
 func (h *PlaceHandler) UpdatePlaceFavorite(c echo.Context) error {
 	for key := range c.QueryParams() {
 		if _, ok := allowedPlaceFavoriteQueries[key]; !ok {
@@ -150,7 +208,7 @@ func (h *PlaceHandler) UpdatePlaceFavorite(c echo.Context) error {
 		queryFavoriteSet = true
 	}
 
-	var req updateFavoriteRequest
+	var req UpdateFavoriteRequest
 	if queryUserID == "" || queryPlaceID == "" || !queryFavoriteSet {
 		if err := c.Bind(&req); err != nil {
 			return c.JSON(http.StatusBadRequest, map[string]string{"error": "リクエストが不正です"})

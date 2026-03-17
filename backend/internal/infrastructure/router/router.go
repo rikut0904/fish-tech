@@ -65,6 +65,14 @@ func NewRouter() (*echo.Echo, error) {
 	placeHandler := handler.NewPlaceHandler(placeUseCase)
 	adminHTTPHandler := adminHandler.NewAdminHandler(adminUseCase, photosClient)
 	allowedAdminOrigins := parseAllowedOrigins(os.Getenv("ADMIN_ALLOWED_ORIGINS"), defaultAdminOrigin)
+	allowedSwaggerOrigins := parseAllowedOrigins(
+		os.Getenv("SWAGGER_ALLOWED_ORIGINS"),
+		"http://localhost:3000",
+	)
+	allowedSwaggerRefererPaths := parseAllowedRefererPaths(
+		os.Getenv("SWAGGER_ALLOWED_REFERER_PATHS"),
+		[]string{"/swagger", "/swagger_ui.html"},
+	)
 
 	// ルーティング
 	api := e.Group("/api")
@@ -76,7 +84,7 @@ func NewRouter() (*echo.Echo, error) {
 		api.PATCH("/places/favorite", placeHandler.UpdatePlaceFavorite)
 
 		adminGroup := api.Group("/admin")
-		adminGroup.Use(RequireAdminOrigin(allowedAdminOrigins))
+		adminGroup.Use(RequireAdminOrigin(allowedAdminOrigins, allowedSwaggerOrigins, allowedSwaggerRefererPaths))
 		{
 			adminGroup.POST("/fishes/upload-image", adminHTTPHandler.UploadFishImage)
 			adminGroup.POST("/fishes", adminHTTPHandler.CreateFish)
@@ -87,6 +95,29 @@ func NewRouter() (*echo.Echo, error) {
 	}
 
 	return e, nil
+}
+
+func parseAllowedRefererPaths(raw string, defaults []string) []string {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return defaults
+	}
+
+	parts := strings.Split(raw, ",")
+	result := make([]string, 0, len(parts))
+	for _, part := range parts {
+		normalized := normalizeRefererPath(part)
+		if normalized == "" {
+			continue
+		}
+		result = append(result, normalized)
+	}
+
+	if len(result) == 0 {
+		return defaults
+	}
+
+	return result
 }
 
 // shouldRunAutoMigrate は起動時マイグレーションの有効状態を返します。

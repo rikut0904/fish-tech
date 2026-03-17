@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="referrer" content="unsafe-url" />
+    <title>Fish-Tech Swagger UI</title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css"
+    />
+    <style>
+      body {
+        margin: 0;
+        background: #ffffff;
+      }
+
+      #swagger-ui {
+        min-height: 100vh;
+      }
+
+      .error-message {
+        margin: 24px;
+        padding: 16px;
+        border: 1px solid #fecaca;
+        border-radius: 12px;
+        background: #fef2f2;
+        color: #991b1b;
+        font-family: sans-serif;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="swagger-ui"></div>
+    <script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
+    <script>
+      function parseApiBaseUrl() {
+        var params = new URLSearchParams(window.location.search);
+        return params.get("apiBaseUrl") || "http://localhost:8080/api";
+      }
+
+      function applyApiBaseUrl(spec, apiBaseUrl) {
+        try {
+          var parsed = new URL(apiBaseUrl);
+          spec.host = parsed.host;
+          spec.schemes = [parsed.protocol.replace(":", "")];
+          spec.basePath = parsed.pathname || "/";
+        } catch (error) {
+          console.error(error);
+        }
+        return spec;
+      }
+
+      function renderError(message) {
+        var container = document.getElementById("swagger-ui");
+        if (!container) {
+          return;
+        }
+
+        container.innerHTML =
+          '<div class="error-message">' + message + "</div>";
+      }
+
+      window.addEventListener("load", function () {
+        if (!window.SwaggerUIBundle) {
+          renderError("Swagger UI の読み込みに失敗しました。");
+          return;
+        }
+
+        try {
+          var apiBaseUrl = parseApiBaseUrl();
+          fetch(window.location.origin + "/swagger.json")
+            .then(function (response) {
+              if (!response.ok) {
+                throw new Error("Swagger 定義の取得に失敗しました。");
+              }
+              return response.json();
+            })
+            .then(function (spec) {
+              window.SwaggerUIBundle({
+                dom_id: "#swagger-ui",
+                spec: applyApiBaseUrl(spec, apiBaseUrl),
+                deepLinking: true,
+                defaultModelsExpandDepth: -1,
+                layout: "BaseLayout",
+              });
+            })
+            .catch(function (error) {
+              console.error(error);
+              renderError("Swagger 定義の読み込みに失敗しました。");
+            });
+        } catch (error) {
+          console.error(error);
+          renderError("Swagger UI の初期化に失敗しました。");
+        }
+      });
+    </script>
+  </body>
+</html>
