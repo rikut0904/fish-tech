@@ -32,7 +32,7 @@ type Repository interface {
 	ListFishes(ctx context.Context) ([]adminDomain.Fish, error)
 	CreateFish(ctx context.Context, fish adminDomain.Fish) (adminDomain.Fish, error)
 	DeleteFish(ctx context.Context, id string) error
-	ListPairs(ctx context.Context) ([]adminDomain.FishPair, error)
+	ListPairs(ctx context.Context, fishID string) ([]adminDomain.FishPair, error)
 	CreatePair(ctx context.Context, pair adminDomain.FishPair) (adminDomain.FishPair, error)
 	DeletePair(ctx context.Context, id string) error
 	ExistsFish(ctx context.Context, id string) (bool, error)
@@ -49,7 +49,7 @@ type UseCase interface {
 	ListFishes(ctx context.Context) ([]adminDomain.Fish, error)
 	CreateFish(ctx context.Context, name string, category string, description string, imageURL string, imageMediaID string, linkURL string) (adminDomain.Fish, error)
 	DeleteFish(ctx context.Context, id string) error
-	ListPairs(ctx context.Context) ([]adminDomain.FishPair, error)
+	ListPairs(ctx context.Context, fishID string) ([]adminDomain.FishPair, error)
 	CreatePair(ctx context.Context, fishIDa string, fishIDb string, score int, memo string) (adminDomain.FishPair, error)
 	DeletePair(ctx context.Context, id string) error
 }
@@ -129,8 +129,8 @@ func (u *adminUseCase) DeleteFish(ctx context.Context, id string) error {
 }
 
 // ListPairs は魚相性一覧を返します。
-func (u *adminUseCase) ListPairs(ctx context.Context) ([]adminDomain.FishPair, error) {
-	return u.repo.ListPairs(ctx)
+func (u *adminUseCase) ListPairs(ctx context.Context, fishID string) ([]adminDomain.FishPair, error) {
+	return u.repo.ListPairs(ctx, strings.TrimSpace(fishID))
 }
 
 // CreatePair は魚相性を追加します。
