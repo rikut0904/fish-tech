@@ -1,6 +1,7 @@
 package router
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strconv"
@@ -10,11 +11,13 @@ import (
 	"fish-tech/internal/infrastructure/hotpepper"
 	"fish-tech/internal/infrastructure/persistence/gorm"
 	"fish-tech/internal/infrastructure/persistence/gorm/repository"
+	"fish-tech/internal/infrastructure/rakuten"
 	"fish-tech/internal/interface/handler"
 	adminHandler "fish-tech/internal/interface/handler/admin"
 	"fish-tech/internal/usecase/admin"
 	"fish-tech/internal/usecase/hello"
 	placeUseCasePkg "fish-tech/internal/usecase/place"
+	recipeUseCase "fish-tech/internal/usecase/recipe"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -58,11 +61,18 @@ func NewRouter() (*echo.Echo, error) {
 		return nil, fmt.Errorf("店舗キャッシュテーブル初期化に失敗しました: %w", err)
 	}
 	placeUseCase := placeUseCasePkg.NewPlaceUseCase(placeRepository)
+	rakutenClient := rakuten.NewClientFromEnv()
+	recipeRepository, err := repository.NewRecipeRepository(db)
+	if err != nil {
+		return nil, fmt.Errorf("レシピ用テーブル初期化に失敗しました: %w", err)
+	}
+	recipeUC := recipeUseCase.NewRecipeUseCase(recipeRepository, newRakutenClientAdapter(rakutenClient))
 
 	// ハンドラーの初期化
 	helloHandler := handler.NewHelloHandler(helloUseCase)
 	publicFishHandler := handler.NewPublicFishHandler(adminUseCase)
 	placeHandler := handler.NewPlaceHandler(placeUseCase)
+	recipeHandler := handler.NewRecipeHandler(recipeUC)
 	adminHTTPHandler := adminHandler.NewAdminHandler(adminUseCase, photosClient)
 	allowedAdminOrigins := parseAllowedOrigins(os.Getenv("ADMIN_ALLOWED_ORIGINS"), defaultAdminOrigin)
 
@@ -74,12 +84,16 @@ func NewRouter() (*echo.Echo, error) {
 		api.GET("/pairs", publicFishHandler.ListPairs)
 		api.GET("/places/recommendations", placeHandler.GetRecommendedPlaces)
 		api.PATCH("/places/favorite", placeHandler.UpdatePlaceFavorite)
+		api.GET("/recipes", recipeHandler.SearchRecipes)
+		api.GET("/recipes/seasonal", recipeHandler.GetSeasonalRecipes)
+		api.PATCH("/recipes/favorite", recipeHandler.UpdateRecipeFavorite)
 
 		adminGroup := api.Group("/admin")
 		adminGroup.Use(RequireAdminOrigin(allowedAdminOrigins))
 		{
 			adminGroup.POST("/fishes/upload-image", adminHTTPHandler.UploadFishImage)
 			adminGroup.POST("/fishes", adminHTTPHandler.CreateFish)
+			adminGroup.PATCH("/fishes/:id/seasons", adminHTTPHandler.UpdateFishSeasons)
 			adminGroup.DELETE("/fishes/:id", adminHTTPHandler.DeleteFish)
 			adminGroup.POST("/pairs", adminHTTPHandler.CreatePair)
 			adminGroup.DELETE("/pairs/:id", adminHTTPHandler.DeletePair)
@@ -97,4 +111,62 @@ func shouldRunAutoMigrate() bool {
 	}
 
 	return enabled
+}
+
+type rakutenClientAdapter struct {
+	client *rakuten.Client
+}
+
+func newRakutenClientAdapter(client *rakuten.Client) recipeUseCase.RakutenClient {
+	if client == nil {
+		return nil
+	}
+
+	return &rakutenClientAdapter{client: client}
+}
+
+func (a *rakutenClientAdapter) Enabled() bool {
+	return a.client != nil && a.client.Enabled()
+}
+
+func (a *rakutenClientAdapter) ListCategories(ctx context.Context) ([]recipeUseCase.RakutenCategory, error) {
+	categories, err := a.client.ListCategories(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]recipeUseCase.RakutenCategory, 0, len(categories))
+	for _, category := range categories {
+		result = append(result, recipeUseCase.RakutenCategory{
+			ID:   category.ID,
+			Name: category.Name,
+			Type: category.Type,
+		})
+	}
+
+	return result, nil
+}
+
+func (a *rakutenClientAdapter) GetCategoryRanking(ctx context.Context, categoryID string, categoryName string) ([]recipeUseCase.RakutenRecipe, error) {
+	ranking, err := a.client.GetCategoryRanking(ctx, categoryID, categoryName)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]recipeUseCase.RakutenRecipe, 0, len(ranking))
+	for _, item := range ranking {
+		result = append(result, recipeUseCase.RakutenRecipe{
+			ID:              item.ID,
+			Title:           item.Title,
+			ImageURL:        item.ImageURL,
+			RecipeURL:       item.RecipeURL,
+			CookingTime:     item.CookingTime,
+			Cost:            item.Cost,
+			Description:     item.Description,
+			Rank:            item.Rank,
+			MatchedCategory: item.MatchedCategory,
+		})
+	}
+
+	return result, nil
 }

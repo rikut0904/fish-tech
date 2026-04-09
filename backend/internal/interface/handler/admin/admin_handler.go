@@ -6,7 +6,9 @@ import (
 	"io"
 	"net/http"
 	"path/filepath"
+	"sort"
 	"strconv"
+	"strings"
 
 	"github.com/labstack/echo/v4"
 
@@ -38,6 +40,7 @@ type fishResponse struct {
 	ImageURL     string `json:"imageUrl"`
 	ImageMediaID string `json:"imageMediaId,omitempty"`
 	LinkURL      string `json:"linkUrl"`
+	Months       []int  `json:"months"`
 }
 
 type pairResponse struct {
@@ -49,6 +52,12 @@ type pairResponse struct {
 }
 
 type uploadImageResponse struct {
+	ImageURL     string `json:"imageUrl"`
+	ImageMediaID string `json:"imageMediaId,omitempty"`
+}
+
+type updateFishSeasonsRequest struct {
+	Months []int `json:"months"`
 	ImageURL     string `json:"imageUrl"`
 	ImageMediaID string `json:"imageMediaId,omitempty"`
 }
@@ -189,4 +198,56 @@ func (h *AdminHandler) DeletePair(c echo.Context) error {
 	}
 
 	return c.NoContent(http.StatusNoContent)
+}
+
+// UpdateFishSeasons は魚の旬月を更新します。
+func (h *AdminHandler) UpdateFishSeasons(c echo.Context) error {
+	fishID := strings.TrimSpace(c.Param("id"))
+	if fishID == "" {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "idは必須です"})
+	}
+
+	months := parseMonthsQuery(c.QueryParam("months"))
+	if len(months) == 0 {
+		var req updateFishSeasonsRequest
+		if err := c.Bind(&req); err == nil {
+			months = req.Months
+		}
+	}
+
+	if err := h.useCase.UpdateFishSeasons(c.Request().Context(), fishID, months); err != nil {
+		switch {
+		case errors.Is(err, adminUseCase.ErrFishNotFound):
+			return c.JSON(http.StatusNotFound, map[string]string{"error": err.Error()})
+		case errors.Is(err, adminUseCase.ErrInvalidSeasonMonth):
+			return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
+		default:
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "旬の更新に失敗しました"})
+		}
+	}
+
+	return c.NoContent(http.StatusNoContent)
+}
+
+func parseMonthsQuery(raw string) []int {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return nil
+	}
+
+	parts := strings.Split(raw, ",")
+	result := make([]int, 0, len(parts))
+	for _, part := range parts {
+		value := strings.TrimSpace(part)
+		if value == "" {
+			continue
+		}
+		month, err := strconv.Atoi(value)
+		if err != nil {
+			return []int{0}
+		}
+		result = append(result, month)
+	}
+	sort.Ints(result)
+	return result
 }

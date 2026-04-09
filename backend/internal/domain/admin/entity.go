@@ -11,6 +11,7 @@ type Fish struct {
 	ImageURL     string
 	ImageMediaID string
 	LinkURL      string
+	Months       []int
 	CreatedAt    time.Time
 }
 

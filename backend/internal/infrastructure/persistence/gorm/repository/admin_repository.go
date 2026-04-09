@@ -11,6 +11,7 @@ import (
 
 	adminDomain "fish-tech/internal/domain/admin"
 	"fish-tech/internal/infrastructure/persistence/gorm/model"
+	"fish-tech/internal/shared/timeutil"
 	adminUsecase "fish-tech/internal/usecase/admin"
 )
 
@@ -21,6 +22,10 @@ type AdminRepository struct {
 
 // NewAdminRepository は新しい管理画面リポジトリを作成します。
 func NewAdminRepository(db *gorm.DB) (*AdminRepository, error) {
+	if err := db.AutoMigrate(&model.Fish{}, &model.FishPair{}, &model.Season{}); err != nil {
+		return nil, err
+	}
+
 	return &AdminRepository{db: db}, nil
 }
 
@@ -29,6 +34,15 @@ func (r *AdminRepository) ListFishes(ctx context.Context) ([]adminDomain.Fish, e
 	var rows []model.Fish
 	if err := r.db.WithContext(ctx).Order("created_at desc").Find(&rows).Error; err != nil {
 		return nil, err
+	}
+
+	var seasonRows []model.Season
+	if err := r.db.WithContext(ctx).Order("month asc").Find(&seasonRows).Error; err != nil {
+		return nil, err
+	}
+	monthsByFishID := make(map[string][]int, len(seasonRows))
+	for _, row := range seasonRows {
+		monthsByFishID[row.FishID] = append(monthsByFishID[row.FishID], row.Month)
 	}
 
 	result := make([]adminDomain.Fish, 0, len(rows))
@@ -46,6 +60,7 @@ func (r *AdminRepository) ListFishes(ctx context.Context) ([]adminDomain.Fish, e
 			ImageURL:     row.ImageURL,
 			ImageMediaID: row.ImageMediaID,
 			LinkURL:      row.LinkURL,
+			Months:       monthsByFishID[row.ID],
 			CreatedAt:    row.CreatedAt,
 		})
 	}
@@ -79,6 +94,9 @@ func (r *AdminRepository) CreateFish(ctx context.Context, fish adminDomain.Fish)
 // DeleteFish は魚を削除し、関連相性も削除します。
 func (r *AdminRepository) DeleteFish(ctx context.Context, id string) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("fish_id = ?", id).Delete(&model.Season{}).Error; err != nil {
+			return err
+		}
 		if err := tx.Where("fish_a_id = ? OR fish_b_id = ?", id, id).Delete(&model.FishPair{}).Error; err != nil {
 			return err
 		}
@@ -92,6 +110,33 @@ func (r *AdminRepository) DeleteFish(ctx context.Context, id string) error {
 		}
 
 		return nil
+	})
+}
+
+// ReplaceFishSeasons は魚の旬月を置き換えます。
+func (r *AdminRepository) ReplaceFishSeasons(ctx context.Context, fishID string, months []int) error {
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("fish_id = ?", fishID).Delete(&model.Season{}).Error; err != nil {
+			return err
+		}
+
+		if len(months) == 0 {
+			return nil
+		}
+
+		rows := make([]model.Season, 0, len(months))
+		now := timeutil.NowJST()
+		for _, month := range months {
+			updatedAt := now
+			rows = append(rows, model.Season{
+				FishID:    fishID,
+				Month:     month,
+				CreatedAt: now,
+				UpdatedAt: &updatedAt,
+			})
+		}
+
+		return tx.Create(&rows).Error
 	})
 }
 
